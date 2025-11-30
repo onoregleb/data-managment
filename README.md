@@ -8,7 +8,7 @@ EL-пайплайн: FastAPI → MongoDB → Airflow → PostgreSQL
 ## Запуск
 
 ```powershell
-cd C:\Users\Gleb Onore\Desktop\db-course\marketplace-pipeline
+cd marketplace-pipeline
 docker compose up -d
 ```
 

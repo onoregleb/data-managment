@@ -12,16 +12,14 @@ cd C:\Users\Gleb Onore\Desktop\db-course\marketplace-pipeline
 docker compose up -d
 ```
 
-⏳ Подождать 2-3 минуты
-
-## 🔗 Сервисы
+## Сервисы
 
 | Сервис | URL |
 |--------|-----|
 | **FastAPI** | http://localhost:8000/docs |
 | **Airflow** | http://localhost:8080 (admin/admin) |
 
-## 📝 Использование
+## Использование
 
 ### 1. Добавить кошелек (FastAPI → MongoDB)
 
@@ -45,13 +43,7 @@ curl http://localhost:8000/transactions
 curl http://localhost:8000/stats
 ```
 
-### 4. Запустить EL в Airflow (MongoDB → PostgreSQL)
-
-1. Открыть http://localhost:8080
-2. Логин: admin / admin
-3. DAG: `el_mongo_to_postgres` → включить → запустить ▶️
-
-### 5. Проверить PostgreSQL
+### 4. Проверить PostgreSQL
 
 ```powershell
 docker exec -it postgres-dw psql -U postgres -d blockchain -c "SELECT * FROM transactions;"

@@ -1,0 +1,173 @@
+x-airflow-common: &airflow-common
+  image: apache/airflow:2.8.1
+  environment: &airflow-common-env
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres-airflow:5432/airflow
+    AIRFLOW__CORE__FERNET_KEY: 'zTvhk9hh7h-5h6h7h8h9h0h1h2h3h4h5h6h7h8h9h0h1h2h3='
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'false'
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth'
+    AIRFLOW__WEBSERVER__EXPOSE_CONFIG: 'true'
+    # Connections
+    MONGO_URI: mongodb://mongo:mongo@mongodb:27017/
+    POSTGRES_URI: postgresql://postgres:postgres@postgres-dw:5432/blockchain
+    ETHERSCAN_API_KEY: ${ETHERSCAN_API_KEY:-YourApiKeyToken}
+    _PIP_ADDITIONAL_REQUIREMENTS: 'pymongo psycopg2-binary httpx'
+  volumes:
+    - ./airflow/dags:/opt/airflow/dags
+    - ./airflow/logs:/opt/airflow/logs
+  user: "${AIRFLOW_UID:-50000}:0"
+  depends_on:
+    postgres-airflow:
+      condition: service_healthy
+    mongodb:
+      condition: service_healthy
+    postgres-dw:
+      condition: service_healthy
+  networks:
+    - pipeline-network
+
+services:
+  # ===========================================
+  # MongoDB - хранение сырых данных от парсера
+  # ===========================================
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongo
+      MONGO_INITDB_ROOT_PASSWORD: mongo
+    volumes:
+      - mongodb_data:/data/db
+    ports:
+      - "27017:27017"
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pipeline-network
+
+  # ===========================================
+  # PostgreSQL - Data Warehouse
+  # ===========================================
+  postgres-dw:
+    image: postgres:15-alpine
+    container_name: postgres-dw
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: blockchain
+    volumes:
+      - postgres_dw_data:/var/lib/postgresql/data
+      - ./dwh:/docker-entrypoint-initdb.d
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pipeline-network
+
+  # ===========================================
+  # PostgreSQL для Airflow
+  # ===========================================
+  postgres-airflow:
+    image: postgres:15-alpine
+    container_name: postgres-airflow
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres_airflow_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pipeline-network
+
+  # ===========================================
+  # Blockchain App Service (FastAPI)
+  # ===========================================
+  app:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    container_name: blockchain-app
+    environment:
+      MONGO_URI: mongodb://mongo:mongo@mongodb:27017/
+      MONGO_DB: blockchain_raw
+      ETHERSCAN_API_KEY: ${ETHERSCAN_API_KEY:-YourApiKeyToken}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app
+    networks:
+      - pipeline-network
+
+  # ===========================================
+  # Airflow Webserver
+  # ===========================================
+  airflow-webserver:
+    <<: *airflow-common
+    container_name: airflow-webserver
+    command: webserver
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+
+  # ===========================================
+  # Airflow Scheduler
+  # ===========================================
+  airflow-scheduler:
+    <<: *airflow-common
+    container_name: airflow-scheduler
+    command: scheduler
+    restart: always
+
+  # ===========================================
+  # Airflow Init
+  # ===========================================
+  airflow-init:
+    <<: *airflow-common
+    container_name: airflow-init
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        mkdir -p /sources/logs /sources/dags
+        chown -R "${AIRFLOW_UID:-50000}:0" /sources/{logs,dags}
+        exec /entrypoint airflow version
+    environment:
+      <<: *airflow-common-env
+      _AIRFLOW_DB_MIGRATE: 'true'
+      _AIRFLOW_WWW_USER_CREATE: 'true'
+      _AIRFLOW_WWW_USER_USERNAME: admin
+      _AIRFLOW_WWW_USER_PASSWORD: admin
+    user: "0:0"
+    volumes:
+      - ./airflow:/sources
+
+volumes:
+  mongodb_data:
+  postgres_dw_data:
+  postgres_airflow_data:
+
+networks:
+  pipeline-network:
+    driver: bridge

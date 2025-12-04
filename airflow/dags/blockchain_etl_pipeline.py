@@ -7,6 +7,7 @@ Blockchain ETL Pipeline
 from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.python import PythonOperator
+from airflow.operators.bash import BashOperator
 import os
 
 default_args = {
@@ -477,11 +478,17 @@ with DAG(
         python_callable=load_to_postgres,
     )
     
-    # Task 4: Статистика
+    # Task 4: DBT трансформация (создание DataMart)
+    dbt_run = BashOperator(
+        task_id='dbt_run',
+        bash_command='cd /opt/airflow/dbt && dbt run --profiles-dir .',
+    )
+    
+    # Task 5: Статистика
     statistics = PythonOperator(
         task_id='print_statistics',
         python_callable=print_statistics,
     )
     
-    # Pipeline: fetch → extract → load → stats
-    fetch_data >> extract_data >> load_data >> statistics
+    # Pipeline: fetch → extract → load → dbt → stats
+    fetch_data >> extract_data >> load_data >> dbt_run >> statistics

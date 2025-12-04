@@ -1,0 +1,30 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: public
+    tables:
+      - name: wallets
+        description: "Сырые данные кошельков из MongoDB"
+      - name: transactions
+        description: "Сырые данные транзакций из MongoDB"
+
+models:
+  - name: stg_wallets
+    description: "Staging слой для кошельков"
+    columns:
+      - name: wallet_address
+        description: "Адрес кошелька (lowercase)"
+        tests:
+          - not_null
+          - unique
+
+  - name: stg_transactions
+    description: "Staging слой для транзакций"
+    columns:
+      - name: tx_hash
+        description: "Хеш транзакции"
+        tests:
+          - not_null
+          - unique
+

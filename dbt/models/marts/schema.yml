@@ -1,0 +1,26 @@
+version: 2
+
+models:
+  - name: dm_wallet_summary
+    description: "DataMart: Сводка по кошелькам с метриками активности"
+    columns:
+      - name: wallet_address
+        description: "Адрес кошелька"
+        tests:
+          - not_null
+          - unique
+      - name: activity_level
+        description: "Уровень активности (low/medium/high)"
+
+  - name: dm_daily_stats
+    description: "DataMart: Ежедневная статистика транзакций"
+    columns:
+      - name: date
+        description: "Дата"
+        tests:
+          - not_null
+          - unique
+
+  - name: dm_overall_metrics
+    description: "DataMart: Общие метрики системы"
+

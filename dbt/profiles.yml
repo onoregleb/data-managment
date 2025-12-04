@@ -3,7 +3,7 @@ blockchain:
   outputs:
     dev:
       type: postgres
-      host: "{{ env_var('DBT_HOST', 'postgres-dw') }}"
+      host: postgres-dw
       port: 5432
       user: postgres
       password: postgres

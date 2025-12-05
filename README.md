@@ -4,7 +4,7 @@ ETL-пайплайн для сбора и анализа данных Ethereum �
 
 **Архитектура:** FastAPI → MongoDB → Airflow → PostgreSQL → DBT → DataMart
 
-На основе [blockchain_app](https://github.com/onoregleb/blockchain_app)
+**Репозиторий:** [GitLab](https://gitlab.com/onregleb-group/db-course)
 
 ---
 
@@ -116,12 +116,17 @@ pre-commit install
 pre-commit run --all-files
 ```
 
-### GitHub Actions CI/CD
+### GitLab CI/CD
 
-При push в `main`/`master` автоматически:
-1. Проверяется код (black, isort, flake8, sqlfluff)
-2. Тестируются DBT модели
-3. Деплоится на сервер через SSH
+При push/merge в `main`/`master` автоматически:
+1. **lint** — Проверяется код (black, isort, flake8, sqlfluff)
+2. **test** — Тестируются DBT модели
+3. **deploy** — Деплоится на сервер через SSH (manual trigger)
+
+**Переменные CI/CD** (Settings → CI/CD → Variables):
+- `SSH_HOST` — IP сервера (213.171.27.223)
+- `SSH_USER` — Пользователь SSH (user1)
+- `SSH_PASSWORD` — Пароль SSH (Masked)
 
 ### Запуск DBT
 

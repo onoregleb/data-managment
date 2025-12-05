@@ -52,8 +52,8 @@ def fetch_token_transfers(**context):
     wallets_collection = db["wallets"]
     transactions_collection = db["transactions"]
 
-    print(f"🔗 Fetching blockchain data for {len(MONITORED_WALLETS)} wallets")
-    print(f"📡 Using Etherscan API Key: {ETHERSCAN_API_KEY[:10]}...")
+    print(f"Fetching blockchain data for {len(MONITORED_WALLETS)} wallets")
+    print(f"Using Etherscan API Key: {ETHERSCAN_API_KEY[:10]}...")
 
     total_transactions = 0
     wallets_found = set()
@@ -61,7 +61,7 @@ def fetch_token_transfers(**context):
     try:
         with httpx.Client(timeout=60.0) as http_client:
             for wallet_address in MONITORED_WALLETS:
-                print(f"\n📍 Processing wallet: {wallet_address}")
+                print(f"\nProcessing wallet: {wallet_address}")
 
                 # 1. Получаем обычные ETH транзакции (API V2)
                 response = http_client.get(
@@ -85,10 +85,10 @@ def fetch_token_transfers(**context):
                 if data.get("status") != "1":
                     error_msg = data.get("message", "Unknown error")
                     result_msg = data.get("result", "")
-                    print(f"⚠️ API response: {error_msg} - {result_msg}")
+                    print(f"API response: {error_msg} - {result_msg}")
 
                     if "rate limit" in str(result_msg).lower():
-                        print("⏳ Rate limited, waiting 5 seconds...")
+                        print("Rate limited, waiting 5 seconds...")
                         time.sleep(5)
                     continue
 

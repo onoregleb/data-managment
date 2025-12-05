@@ -72,11 +72,6 @@ Etherscan API -> MongoDB (raw data) -> PostgresSQL -> DBT
 2. **test** — Тестируются DBT модели
 3. **deploy** — Деплоится на сервер через SSH
 
-**Secrets** (Settings → Secrets and variables → Actions):
-- `SSH_HOST` — IP сервера (213.171.27.223)
-- `SSH_USER` — Пользователь SSH (user1)
-- `SSH_PASSWORD` — Пароль SSH
-
 ### Запуск DBT
 
 ```bash

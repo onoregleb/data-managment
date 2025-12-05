@@ -8,7 +8,7 @@ ETL-пайплайн для сбора и анализа данных Ethereum �
 
 ---
 
-## 🌐 Production (Cloud.ru VM)
+## Production (Cloud.ru VM)
 
 | Сервис | URL | Credentials |
 |--------|-----|-------------|
@@ -19,7 +19,7 @@ ETL-пайплайн для сбора и анализа данных Ethereum �
 
 ---
 
-## 📁 Структура проекта
+## Структура проекта
 
 ```
 blockchain-pipeline/
@@ -48,7 +48,7 @@ blockchain-pipeline/
 
 ---
 
-## 🚀 Запуск
+## Запуск
 
 ### Локально
 
@@ -68,7 +68,7 @@ docker compose up -d
 
 ---
 
-## 🔄 Data Pipeline
+## Data Pipeline
 
 ```
 Etherscan API -> MongoDB (raw data) -> PostgresSQL -> DBT
@@ -78,7 +78,7 @@ Etherscan API -> MongoDB (raw data) -> PostgresSQL -> DBT
 
 ---
 
-## 📊 DBT Модели
+##  DBT Модели
 
 ### Слои данных
 
@@ -98,7 +98,7 @@ Etherscan API -> MongoDB (raw data) -> PostgresSQL -> DBT
 
 ---
 
-## 🛠 Development
+## Development
 
 ### Pre-commit hooks
 
@@ -131,7 +131,7 @@ dbt test
 
 ---
 
-## 📝 API Endpoints
+## API Endpoints
 
 ### Добавить кошелек
 
@@ -155,7 +155,7 @@ curl http://localhost:8000/stats
 
 ---
 
-## 🗄 SQL Примеры
+## SQL Примеры
 
 ### Оконные функции в ODS
 
@@ -181,7 +181,7 @@ LIMIT 10;
 
 ---
 
-## 🔧 Ресурсы
+## Ресурсы
 
 | Сервис | RAM | vCPU |
 |--------|-----|------|
@@ -194,7 +194,3 @@ LIMIT 10;
 | **Итого** | **~3.3 GB** | **1.8** |
 
 ---
-
-## 📄 License
-
-MIT

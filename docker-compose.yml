@@ -29,9 +29,7 @@ x-airflow-common: &airflow-common
     - pipeline-network
 
 services:
-  # ===========================================
   # MongoDB - хранение сырых данных
-  # ===========================================
   mongodb:
     image: mongo:latest
     container_name: mongodb
@@ -53,9 +51,7 @@ services:
     mem_limit: 768m
     cpus: 0.35
 
-  # ===========================================
   # PostgreSQL - Data Warehouse
-  # ===========================================
   postgres-dw:
     image: postgres:15-alpine
     container_name: postgres-dw
@@ -79,9 +75,7 @@ services:
     mem_limit: 384m
     cpus: 0.2
 
-  # ===========================================
   # PostgreSQL для Airflow
-  # ===========================================
   postgres-airflow:
     image: postgres:15-alpine
     container_name: postgres-airflow
@@ -102,9 +96,7 @@ services:
     mem_limit: 256m
     cpus: 0.15
 
-  # ===========================================
   # Blockchain App Service (FastAPI)
-  # ===========================================
   app:
     build:
       context: ./app
@@ -127,9 +119,7 @@ services:
     mem_limit: 256m
     cpus: 0.2
 
-  # ===========================================
   # Airflow Webserver
-  # ===========================================
   airflow-webserver:
     <<: *airflow-common
     container_name: airflow-webserver
@@ -147,9 +137,7 @@ services:
     mem_limit: 768m
     cpus: 0.4
 
-  # ===========================================
   # Airflow Scheduler
-  # ===========================================
   airflow-scheduler:
     <<: *airflow-common
     container_name: airflow-scheduler
@@ -159,9 +147,7 @@ services:
     mem_limit: 896m
     cpus: 0.5
 
-  # ===========================================
   # Airflow Init (одноразовый запуск)
-  # ===========================================
   airflow-init:
     <<: *airflow-common
     container_name: airflow-init
@@ -185,9 +171,7 @@ services:
     mem_limit: 512m
     cpus: 0.2
 
-  # ===========================================
   # DBT - трансформация данных
-  # ===========================================
   dbt:
     build:
       context: ./dbt

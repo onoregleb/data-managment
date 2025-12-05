@@ -238,10 +238,7 @@ def log_stats(**context):
     conn.close()
 
 
-# ===========================================
 # DAG
-# ===========================================
-
 with DAG(
     "el_mongo_to_postgres",
     default_args=default_args,

@@ -4,8 +4,6 @@ ETL-пайплайн для сбора и анализа данных Ethereum �
 
 **Архитектура:** FastAPI → MongoDB → Airflow → PostgreSQL → DBT → DataMart
 
-**Репозиторий:** [GitHub](https://github.com/onoregleb/data-managment)
-
 ---
 
 ## Production (Cloud.ru VM)

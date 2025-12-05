@@ -8,9 +8,6 @@ FastAPI сервис для сбора данных о кошельках Ethere
 - Добавление кошельков для мониторинга
 - Загрузка транзакций через Etherscan API
 - Получение статистики по кошелькам и транзакциям
-
-Author: Gleb Onore
-Version: 1.0.0
 """
 
 import os
@@ -21,10 +18,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from pymongo import MongoClient
 
-# ==============================================================================
 # Конфигурация приложения
-# ==============================================================================
-
 app = FastAPI(
     title="Blockchain Wallet Service",
     description="API для сбора и анализа данных Ethereum кошельков",
@@ -32,7 +26,6 @@ app = FastAPI(
 )
 
 # MongoDB connection settings
-# Переменные окружения позволяют настраивать подключение без изменения кода
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://mongo:mongo@localhost:27017/")
 MONGO_DB = os.getenv("MONGO_DB", "blockchain_raw")
 
@@ -44,17 +37,12 @@ wallets_collection = db["wallets"]
 transactions_collection = db["transactions"]
 
 # Etherscan API configuration
-# Бесплатный ключ можно получить на https://etherscan.io/apis
 ETHERSCAN_API_KEY = os.getenv("ETHERSCAN_API_KEY", "YourApiKeyToken")
 ETHERSCAN_BASE_URL = "https://api.etherscan.io/v2/api"
 CHAIN_ID = 1  # Ethereum Mainnet
 
 
-# ==============================================================================
 # Pydantic Models для валидации данных
-# ==============================================================================
-
-
 class WalletRequest(BaseModel):
     """
     Модель запроса для добавления кошелька.
@@ -85,11 +73,7 @@ class TransactionData(BaseModel):
     timestamp: datetime
 
 
-# ==============================================================================
 # API Endpoints
-# ==============================================================================
-
-
 @app.get("/")
 def root():
     """
@@ -235,7 +219,6 @@ async def fetch_wallet_data(address: str):
     try:
         async with httpx.AsyncClient() as client_http:
             # Запрос к Etherscan API v2
-            # Документация: https://docs.etherscan.io/
             response = await client_http.get(
                 ETHERSCAN_BASE_URL,
                 params={
@@ -283,7 +266,7 @@ async def fetch_wallet_data(address: str):
                     "fetched_at": datetime.utcnow(),
                 }
 
-                # Upsert для идемпотентности - повторный запуск не создаст дубли
+                # Upsert - повторный запуск не создаст дубли
                 transactions_collection.update_one(
                     {"hash": tx["hash"]}, {"$set": tx_data}, upsert=True
                 )
@@ -363,10 +346,7 @@ def get_stats():
     }
 
 
-# ==============================================================================
 # Entry point
-# ==============================================================================
-
 if __name__ == "__main__":
     import uvicorn
 

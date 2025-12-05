@@ -22,7 +22,7 @@ default_args = {
 # USDT Token Contract на Ethereum
 USDT_CONTRACT = "0xdac17f958d2ee523a2206206994597c13d831ec7"
 
-# Кошельки для мониторинга (активные адреса с большим количеством транзакций)
+# Кошельки для мониторинга
 MONITORED_WALLETS = [
     "0xdfd5293d8e347dfe59e90efd55b2956a1343963d",  # Активный кошелек
     "0x28c6c06298d514db089934071355e5743bf21d60",  # Binance Hot Wallet
@@ -38,7 +38,6 @@ CHAIN_ID = 1  # Ethereum Mainnet
 def fetch_token_transfers(**context):
     """
     Сбор транзакций ERC-20 токена через Etherscan API.
-    Аналогично fetch_wallet.py из blockchain_app.
     """
     import time
 
@@ -135,7 +134,7 @@ def fetch_token_transfers(**context):
                     if result.upserted_id or result.modified_count:
                         total_transactions += 1
 
-                # 2. Получаем токен-транзакции (USDT и другие)
+                # 2. Получаем токен-транзакции
                 time.sleep(0.25)  # Небольшая пауза между запросами
 
                 response = http_client.get(
@@ -222,9 +221,9 @@ def fetch_token_transfers(**context):
                     )
 
     except httpx.TimeoutException:
-        print("⏰ Request timeout - Etherscan API is slow")
+        print("Request timeout - Etherscan API is slow")
     except Exception as e:
-        print(f"❌ Error fetching data: {str(e)}")
+        print(f"Error fetching data: {str(e)}")
 
     client.close()
 
@@ -294,7 +293,7 @@ def extract_from_mongodb(**context):
     client.close()
 
     print(
-        f"📤 Extracted NEW data from MongoDB: {len(wallets)} wallets, {len(transactions)} transactions"
+        f"Extracted NEW data from MongoDB: {len(wallets)} wallets, {len(transactions)} transactions"
     )
 
     context["ti"].xcom_push(key="wallets", value=wallets)
@@ -418,7 +417,7 @@ def print_statistics(**context):
     )
     stats = cur.fetchone()
 
-    # Данные за последние 5 минут (инкремент)
+    # Данные за последние 5 минут
     cur.execute(
         """
         SELECT COUNT(*) FROM transactions
@@ -451,10 +450,7 @@ def print_statistics(**context):
     print("=" * 60 + "\n")
 
 
-# ===========================================
 # DAG Definition
-# ===========================================
-
 with DAG(
     "blockchain_etl_pipeline",
     default_args=default_args,

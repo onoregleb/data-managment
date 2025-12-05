@@ -27,28 +27,27 @@ CREATE TABLE IF NOT EXISTS transactions (
 );
 
 -- Индексы
-CREATE INDEX IF NOT EXISTS idx_tx_wallet ON transactions(wallet_address);
-CREATE INDEX IF NOT EXISTS idx_tx_from ON transactions(from_address);
-CREATE INDEX IF NOT EXISTS idx_tx_to ON transactions(to_address);
-CREATE INDEX IF NOT EXISTS idx_tx_block ON transactions(block_number);
+CREATE INDEX IF NOT EXISTS idx_tx_wallet ON transactions (wallet_address);
+CREATE INDEX IF NOT EXISTS idx_tx_from ON transactions (from_address);
+CREATE INDEX IF NOT EXISTS idx_tx_to ON transactions (to_address);
+CREATE INDEX IF NOT EXISTS idx_tx_block ON transactions (block_number);
 
 -- View: статистика по кошелькам
 CREATE OR REPLACE VIEW wallet_stats AS
-SELECT 
+SELECT
     w.address,
     w.transaction_count,
-    COUNT(t.id) as actual_tx_count,
-    COALESCE(SUM(CASE WHEN t.from_address = w.address THEN t.value_eth ELSE 0 END), 0) as total_sent_eth,
-    COALESCE(SUM(CASE WHEN t.to_address = w.address THEN t.value_eth ELSE 0 END), 0) as total_received_eth
-FROM wallets w
-LEFT JOIN transactions t ON t.wallet_address = w.address
+    COUNT(t.id) AS actual_tx_count,
+    COALESCE(SUM(CASE WHEN t.from_address = w.address THEN t.value_eth ELSE 0 END), 0) AS total_sent_eth,
+    COALESCE(SUM(CASE WHEN t.to_address = w.address THEN t.value_eth ELSE 0 END), 0) AS total_received_eth
+FROM wallets AS w
+LEFT JOIN transactions AS t ON w.address = t.wallet_address
 GROUP BY w.address, w.transaction_count;
 
 -- View: общая статистика
 CREATE OR REPLACE VIEW overall_stats AS
-SELECT 
-    (SELECT COUNT(*) FROM wallets) as total_wallets,
-    (SELECT COUNT(*) FROM transactions) as total_transactions,
-    (SELECT COALESCE(SUM(value_eth), 0) FROM transactions) as total_volume_eth,
-    (SELECT COALESCE(AVG(value_eth), 0) FROM transactions) as avg_transaction_eth;
-
+SELECT
+    (SELECT COUNT(*) FROM wallets) AS total_wallets,
+    (SELECT COUNT(*) FROM transactions) AS total_transactions,
+    (SELECT COALESCE(SUM(value_eth), 0) FROM transactions) AS total_volume_eth,
+    (SELECT COALESCE(AVG(value_eth), 0) FROM transactions) AS avg_transaction_eth;

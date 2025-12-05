@@ -23,4 +23,3 @@ models:
 
   - name: dm_overall_metrics
     description: "DataMart: Общие метрики системы"
-

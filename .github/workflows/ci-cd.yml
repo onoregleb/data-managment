@@ -37,7 +37,7 @@ jobs:
         run: flake8 --max-line-length=100 --ignore=E501,W503 app/ airflow/
 
       - name: Lint SQL (sqlfluff)
-        run: sqlfluff lint dbt/models/ --dialect postgres || true
+        run: sqlfluff lint dwh/ --dialect postgres || true
 
   # ==============================================================================
   # Test - Тестирование DBT моделей

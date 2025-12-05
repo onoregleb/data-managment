@@ -19,4 +19,3 @@ FROM {{ ref('stg_transactions') }}
 WHERE tx_timestamp IS NOT NULL
 GROUP BY DATE(tx_timestamp)
 ORDER BY date DESC
-

@@ -31,7 +31,7 @@ SELECT
     t.first_tx_date,
     t.last_tx_date,
     COALESCE(t.active_days, 0) as active_days,
-    CASE 
+    CASE
         WHEN t.total_tx >= 100 THEN 'high'
         WHEN t.total_tx >= 10 THEN 'medium'
         ELSE 'low'
@@ -40,4 +40,3 @@ SELECT
     CURRENT_TIMESTAMP as updated_at
 FROM {{ ref('stg_wallets') }} w
 LEFT JOIN wallet_transactions t ON w.wallet_address = t.wallet_address
-

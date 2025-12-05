@@ -16,4 +16,3 @@ SELECT
     loaded_at
 FROM {{ source('raw', 'transactions') }}
 WHERE hash IS NOT NULL
-

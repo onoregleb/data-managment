@@ -13,4 +13,3 @@ SELECT
     (SELECT MIN(tx_timestamp) FROM {{ ref('stg_transactions') }}) as first_transaction_date,
     (SELECT MAX(tx_timestamp) FROM {{ ref('stg_transactions') }}) as last_transaction_date,
     CURRENT_TIMESTAMP as updated_at
-

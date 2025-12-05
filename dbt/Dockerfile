@@ -9,4 +9,3 @@ COPY . .
 # Entrypoint для запуска dbt команд
 ENTRYPOINT ["dbt"]
 CMD ["run"]
-

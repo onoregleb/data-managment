@@ -10,4 +10,3 @@ blockchain:
       dbname: blockchain
       schema: public
       threads: 2
-

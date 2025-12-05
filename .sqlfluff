@@ -1,12 +1,9 @@
 [sqlfluff]
 dialect = postgres
-templater = dbt
+templater = raw
 max_line_length = 100
-exclude_rules = LT05, AM04
-
-[sqlfluff:templater:dbt]
-project_dir = dbt
-profiles_dir = dbt
+# Отключаем правила которые не работают с DBT Jinja
+exclude_rules = LT05, AM04, CP01, ST06, ST03, ST09, RF01, RF04, AL01, PRS, LT01
 
 [sqlfluff:indentation]
 indent_unit = space

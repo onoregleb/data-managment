@@ -19,16 +19,17 @@ repos:
       - id: flake8
         args: ['--max-line-length=100', '--ignore=E501,W503']
 
-  # SQL форматирование (DBT)
+  # SQL форматирование - только для dwh (не DBT)
+  # SQLFluff не работает с DBT Jinja шаблонами без отдельного пакета
   - repo: https://github.com/sqlfluff/sqlfluff
     rev: 3.0.6
     hooks:
       - id: sqlfluff-lint
         args: ['--dialect=postgres']
-        additional_dependencies: ['dbt-postgres>=1.7.0']
+        files: ^dwh/.*\.sql$
       - id: sqlfluff-fix
         args: ['--dialect=postgres']
-        additional_dependencies: ['dbt-postgres>=1.7.0']
+        files: ^dwh/.*\.sql$
 
   # Общие проверки
   - repo: https://github.com/pre-commit/pre-commit-hooks

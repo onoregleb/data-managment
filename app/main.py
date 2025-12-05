@@ -15,13 +15,11 @@ Version: 1.0.0
 
 import os
 from datetime import datetime
-from typing import Optional
 
+import httpx
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from pymongo import MongoClient
-import httpx
-
 
 # ==============================================================================
 # Конфигурация приложения
@@ -157,9 +155,7 @@ def add_wallet(request: WalletRequest):
     }
 
     # Upsert: создаём новую запись или обновляем существующую
-    result = wallets_collection.update_one(
-        {"address": address}, {"$set": wallet_data}, upsert=True
-    )
+    result = wallets_collection.update_one({"address": address}, {"$set": wallet_data}, upsert=True)
 
     return {
         "message": "Wallet added successfully",

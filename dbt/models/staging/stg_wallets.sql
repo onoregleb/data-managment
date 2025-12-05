@@ -9,4 +9,3 @@ SELECT
     loaded_at
 FROM {{ source('raw', 'wallets') }}
 WHERE address IS NOT NULL
-

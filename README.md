@@ -78,26 +78,6 @@ Etherscan API -> MongoDB (raw data) -> PostgresSQL -> DBT
 
 ---
 
-##  DBT Модели
-
-### Слои данных
-
-| Слой | Materialization | Описание |
-|------|-----------------|----------|
-| **staging** | view | Сырые данные, минимальные трансформации |
-| **ods** | incremental | Очищенные данные, дедупликация |
-| **dwh** | table | Dimensional model (dim/fact) |
-| **marts** | table | Аналитические витрины |
-
-### Модели
-
-- `stg_wallets`, `stg_transactions` — staging
-- `ods_wallets`, `ods_transactions` — ODS с оконными функциями
-- `dim_wallets`, `fact_transactions` — DWH
-- `mart_wallet_analytics`, `mart_daily_metrics`, `mart_summary` — витрины
-
----
-
 ## Development
 
 ### Pre-commit hooks

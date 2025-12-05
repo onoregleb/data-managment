@@ -35,9 +35,7 @@ blockchain-pipeline/
 │   ├── profiles.yml         # Подключение к PostgreSQL
 │   └── models/
 │       ├── staging/         # STG слой (views)
-│       ├── ods/             # ODS слой (incremental)
-│       ├── dwh/             # DWH слой (tables)
-│       └── marts/           # Витрины (tables)
+│       └── marts/           # Витрины
 ├── dwh/
 │   └── 01_init.sql          # Инициализация PostgreSQL
 ├── docker-compose.yml       # Оркестрация контейнеров
@@ -57,17 +55,6 @@ cd blockchain-pipeline
 docker compose up -d
 ```
 
-### На сервере
-
-```bash
-ssh user1@213.171.27.223
-cd ~/data-managment
-git pull
-docker compose up -d
-```
-
----
-
 ## Data Pipeline
 
 ```
@@ -79,14 +66,6 @@ Etherscan API -> MongoDB (raw data) -> PostgresSQL -> DBT
 ---
 
 ## Development
-
-### Pre-commit hooks
-
-```bash
-pip install pre-commit
-pre-commit install
-pre-commit run --all-files
-```
 
 ### GitHub Actions CI/CD
 

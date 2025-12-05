@@ -1,0 +1,23 @@
+[tool.black]
+line-length = 100
+target-version = ['py311']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+    | \.venv
+    | venv
+    | __pycache__
+    | \.mypy_cache
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+skip = [".git", "venv", ".venv", "__pycache__"]
+
+[tool.flake8]
+max-line-length = 100
+ignore = ["E501", "W503", "E203"]
+exclude = [".git", "__pycache__", "venv", ".venv"]

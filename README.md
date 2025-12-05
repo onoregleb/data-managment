@@ -4,7 +4,7 @@ ETL-пайплайн для сбора и анализа данных Ethereum �
 
 **Архитектура:** FastAPI → MongoDB → Airflow → PostgreSQL → DBT → DataMart
 
-**Репозиторий:** [GitLab](https://gitlab.com/onregleb-group/db-course)
+**Репозиторий:** [GitHub](https://github.com/onoregleb/data-managment)
 
 ---
 
@@ -71,15 +71,7 @@ docker compose up -d
 ## 🔄 Data Pipeline
 
 ```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│  Etherscan  │────▶│   MongoDB   │────▶│  PostgreSQL │────▶│     DBT     │
-│    API      │     │  (raw data) │     │    (STG)    │     │  (ODS/DWH)  │
-└─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
-                          │                    │                    │
-                          ▼                    ▼                    ▼
-                    wallets,            wallets,             dim_wallets,
-                    transactions        transactions         fact_transactions,
-                                                             marts/*
+Etherscan API -> MongoDB (raw data) -> PostgresSQL -> DBT
 ```
 
 **Расписание:** каждые 5 минут (Airflow DAG)
@@ -116,17 +108,17 @@ pre-commit install
 pre-commit run --all-files
 ```
 
-### GitLab CI/CD
+### GitHub Actions CI/CD
 
-При push/merge в `main`/`master` автоматически:
+При push в `main`/`master` автоматически:
 1. **lint** — Проверяется код (black, isort, flake8, sqlfluff)
 2. **test** — Тестируются DBT модели
-3. **deploy** — Деплоится на сервер через SSH (manual trigger)
+3. **deploy** — Деплоится на сервер через SSH
 
-**Переменные CI/CD** (Settings → CI/CD → Variables):
+**Secrets** (Settings → Secrets and variables → Actions):
 - `SSH_HOST` — IP сервера (213.171.27.223)
 - `SSH_USER` — Пользователь SSH (user1)
-- `SSH_PASSWORD` — Пароль SSH (Masked)
+- `SSH_PASSWORD` — Пароль SSH
 
 ### Запуск DBT
 

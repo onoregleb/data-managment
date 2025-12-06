@@ -11,6 +11,7 @@ ETL-пайплайн для сбора и анализа данных Ethereum �
 | Сервис | URL | Credentials |
 |--------|-----|-------------|
 | **Airflow** | http://213.171.27.223:8080 | admin / admin |
+| **Redash** | http://213.171.27.223:5000 | (setup на первом запуске) |
 | **FastAPI** | http://213.171.27.223:8000/docs | - |
 | **PostgreSQL DWH** | 213.171.27.223:5433 | postgres / postgres |
 | **MongoDB** | 213.171.27.223:27017 | mongo / mongo |
@@ -120,6 +121,37 @@ LIMIT 10;
 
 ---
 
+## Redash - Визуализация данных
+
+### Первый запуск Redash
+
+1. Откройте http://localhost:5000
+2. Создайте admin аккаунт
+3. Добавьте Data Source:
+   - **Type:** PostgreSQL
+   - **Name:** Blockchain DWH
+   - **Host:** postgres-dw
+   - **Port:** 5432
+   - **User:** postgres
+   - **Password:** postgres
+   - **Database:** blockchain
+
+### Пример запроса для дашборда
+
+```sql
+-- Топ-10 кошельков по объёму
+SELECT
+    wallet_address,
+    COUNT(*) as tx_count,
+    SUM(value_eth) as total_volume_eth
+FROM transactions
+GROUP BY wallet_address
+ORDER BY total_volume_eth DESC
+LIMIT 10;
+```
+
+---
+
 ## Ресурсы
 
 | Сервис | RAM | vCPU |
@@ -127,9 +159,14 @@ LIMIT 10;
 | MongoDB | 768 MB | 0.35 |
 | PostgreSQL DW | 384 MB | 0.20 |
 | PostgreSQL Airflow | 256 MB | 0.15 |
+| PostgreSQL Redash | 256 MB | 0.15 |
+| Redis (Redash) | 128 MB | 0.10 |
 | App (FastAPI) | 256 MB | 0.20 |
 | Airflow Webserver | 768 MB | 0.40 |
 | Airflow Scheduler | 896 MB | 0.50 |
-| **Итого** | **~3.3 GB** | **1.8** |
+| Redash Server | 512 MB | 0.30 |
+| Redash Scheduler | 256 MB | 0.20 |
+| Redash Worker | 384 MB | 0.25 |
+| **Итого** | **~4.8 GB** | **3.0** |
 
 ---

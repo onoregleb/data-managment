@@ -170,10 +170,108 @@ services:
     mem_limit: 512m
     cpus: 0.2
 
+  # PostgreSQL для Redash
+  postgres-redash:
+    image: postgres:15-alpine
+    container_name: postgres-redash
+    environment:
+      POSTGRES_USER: redash
+      POSTGRES_PASSWORD: redash
+      POSTGRES_DB: redash
+    volumes:
+      - postgres_redash_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U redash"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pipeline-network
+    # Resource limits
+    mem_limit: 256m
+    cpus: 0.15
+
+  # Redis для Redash
+  redis-redash:
+    image: redis:7-alpine
+    container_name: redis-redash
+    networks:
+      - pipeline-network
+    # Resource limits
+    mem_limit: 128m
+    cpus: 0.1
+
+  # Redash Server
+  redash-server:
+    image: redash/redash:latest
+    container_name: redash-server
+    command: server
+    depends_on:
+      - postgres-redash
+      - redis-redash
+      - postgres-dw
+    ports:
+      - "5000:5000"
+    environment:
+      PYTHONUNBUFFERED: 0
+      REDASH_LOG_LEVEL: INFO
+      REDASH_REDIS_URL: redis://redis-redash:6379/0
+      REDASH_DATABASE_URL: postgresql://redash:redash@postgres-redash:5432/redash
+      REDASH_COOKIE_SECRET: ${REDASH_COOKIE_SECRET:-redash-secret-key}
+      REDASH_SECRET_KEY: ${REDASH_SECRET_KEY:-redash-secret-key}
+    networks:
+      - pipeline-network
+    # Resource limits
+    mem_limit: 512m
+    cpus: 0.3
+
+  # Redash Scheduler
+  redash-scheduler:
+    image: redash/redash:latest
+    container_name: redash-scheduler
+    command: scheduler
+    depends_on:
+      - postgres-redash
+      - redis-redash
+    environment:
+      PYTHONUNBUFFERED: 0
+      REDASH_LOG_LEVEL: INFO
+      REDASH_REDIS_URL: redis://redis-redash:6379/0
+      REDASH_DATABASE_URL: postgresql://redash:redash@postgres-redash:5432/redash
+      QUEUES: "celery"
+      WORKERS_COUNT: 1
+    networks:
+      - pipeline-network
+    # Resource limits
+    mem_limit: 256m
+    cpus: 0.2
+
+  # Redash Worker
+  redash-worker:
+    image: redash/redash:latest
+    container_name: redash-worker
+    command: worker
+    depends_on:
+      - postgres-redash
+      - redis-redash
+    environment:
+      PYTHONUNBUFFERED: 0
+      REDASH_LOG_LEVEL: INFO
+      REDASH_REDIS_URL: redis://redis-redash:6379/0
+      REDASH_DATABASE_URL: postgresql://redash:redash@postgres-redash:5432/redash
+      QUEUES: "queries,scheduled_queries,celery"
+      WORKERS_COUNT: 2
+    networks:
+      - pipeline-network
+    # Resource limits
+    mem_limit: 384m
+    cpus: 0.25
+
 volumes:
   mongodb_data:
   postgres_dw_data:
   postgres_airflow_data:
+  postgres_redash_data:
 
 networks:
   pipeline-network:

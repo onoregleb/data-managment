@@ -164,9 +164,9 @@ LIMIT 10;
 | App (FastAPI) | 256 MB | 0.20 |
 | Airflow Webserver | 768 MB | 0.40 |
 | Airflow Scheduler | 896 MB | 0.50 |
-| Redash Server | 512 MB | 0.30 |
+| Redash Server | 1024 MB | 0.50 |
 | Redash Scheduler | 256 MB | 0.20 |
-| Redash Worker | 384 MB | 0.25 |
-| **Итого** | **~4.8 GB** | **3.0** |
+| Redash Worker | 512 MB | 0.30 |
+| **Итого** | **~5.5 GB** | **3.25** |
 
 ---

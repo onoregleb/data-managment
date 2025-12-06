@@ -219,11 +219,12 @@ services:
       REDASH_DATABASE_URL: postgresql://redash:redash@postgres-redash:5432/redash
       REDASH_COOKIE_SECRET: ${REDASH_COOKIE_SECRET:-redash-secret-key}
       REDASH_SECRET_KEY: ${REDASH_SECRET_KEY:-redash-secret-key}
+      REDASH_WEB_WORKERS: 2
     networks:
       - pipeline-network
     # Resource limits
-    mem_limit: 512m
-    cpus: 0.3
+    mem_limit: 1024m
+    cpus: 0.5
 
   # Redash Scheduler
   redash-scheduler:
@@ -260,12 +261,12 @@ services:
       REDASH_REDIS_URL: redis://redis-redash:6379/0
       REDASH_DATABASE_URL: postgresql://redash:redash@postgres-redash:5432/redash
       QUEUES: "queries,scheduled_queries,celery"
-      WORKERS_COUNT: 2
+      WORKERS_COUNT: 1
     networks:
       - pipeline-network
     # Resource limits
-    mem_limit: 384m
-    cpus: 0.25
+    mem_limit: 512m
+    cpus: 0.3
 
 volumes:
   mongodb_data:

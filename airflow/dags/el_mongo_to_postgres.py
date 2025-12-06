@@ -9,6 +9,7 @@ EL Pipeline: MongoDB → PostgreSQL
 import os
 from datetime import datetime, timedelta
 
+from airflow.operators.bash import BashOperator
 from airflow.operators.python import PythonOperator
 
 from airflow import DAG
@@ -274,10 +275,44 @@ with DAG(
         python_callable=log_stats,
     )
 
-    # Pipeline
+    # DBT tasks
+    DBT_PROJECT_DIR = "/opt/airflow/dbt"
+    DBT_PROFILES_DIR = "/opt/airflow/dbt"
+
+    dbt_run = BashOperator(
+        task_id="dbt_run",
+        bash_command=f"cd {DBT_PROJECT_DIR} && dbt run --profiles-dir {DBT_PROFILES_DIR} --target prod",
+        env={
+            "DBT_PROJECT_DIR": DBT_PROJECT_DIR,
+            "DBT_PROFILES_DIR": DBT_PROFILES_DIR,
+            "POSTGRES_HOST": os.getenv("POSTGRES_HOST", "postgres-dw"),
+            "POSTGRES_USER": os.getenv("POSTGRES_USER", "postgres"),
+            "POSTGRES_PASSWORD": os.getenv("POSTGRES_PASSWORD", "postgres"),
+            "POSTGRES_PORT": os.getenv("POSTGRES_PORT", "5432"),
+            "POSTGRES_DB": os.getenv("POSTGRES_DB", "blockchain"),
+        },
+    )
+
+    dbt_test = BashOperator(
+        task_id="dbt_test",
+        bash_command=f"cd {DBT_PROJECT_DIR} && dbt test --profiles-dir {DBT_PROFILES_DIR} --target prod",
+        env={
+            "DBT_PROJECT_DIR": DBT_PROJECT_DIR,
+            "DBT_PROFILES_DIR": DBT_PROFILES_DIR,
+            "POSTGRES_HOST": os.getenv("POSTGRES_HOST", "postgres-dw"),
+            "POSTGRES_USER": os.getenv("POSTGRES_USER", "postgres"),
+            "POSTGRES_PASSWORD": os.getenv("POSTGRES_PASSWORD", "postgres"),
+            "POSTGRES_PORT": os.getenv("POSTGRES_PORT", "5432"),
+            "POSTGRES_DB": os.getenv("POSTGRES_DB", "blockchain"),
+        },
+    )
+
+    # Pipeline: EL -> Stats -> DBT Run -> DBT Test
     (
         [extract_wallets_task, extract_transactions_task]
         >> load_wallets_task
         >> load_transactions_task
         >> stats_task
+        >> dbt_run
+        >> dbt_test
     )

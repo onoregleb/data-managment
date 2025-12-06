@@ -2,7 +2,7 @@
 
 ETL-пайплайн для сбора и анализа данных Ethereum блокчейна.
 
-**Архитектура:** FastAPI → MongoDB → Airflow → PostgreSQL
+**Архитектура:** FastAPI → MongoDB → Airflow → PostgreSQL → DBT
 
 ---
 
@@ -17,17 +17,100 @@ ETL-пайплайн для сбора и анализа данных Ethereum �
 
 ---
 
+## Подключение к базам данных
+
+### MongoDB
+
+**Формат строки подключения:**
+```
+mongodb://[username:password@]host[:port][/database][?options]
+```
+
+**Переменные окружения:**
+```bash
+MONGO_INITDB_ROOT_USERNAME=root
+MONGO_INITDB_ROOT_PASSWORD=root
+MONGO_HOST=mongodb.app.orb.local
+MONGO_PORT=27017
+MONGO_INITDB_DATABASE=prod
+MONGO_URL=mongodb://root:root@mongodb.app.orb.local:27017
+```
+
+**Локально (Docker Compose):**
+```bash
+MONGO_URI=mongodb://mongo:mongo@mongodb:27017/
+MONGO_DB=blockchain_raw
+```
+
+**Production:**
+```bash
+MONGO_URI=mongodb://mongo:mongo@213.171.27.223:27017/
+MONGO_HOST=213.171.27.223
+MONGO_PORT=27017
+MONGO_INITDB_ROOT_USERNAME=mongo
+MONGO_INITDB_ROOT_PASSWORD=mongo
+MONGO_INITDB_DATABASE=blockchain_raw
+MONGO_URL=mongodb://mongo:mongo@213.171.27.223:27017/blockchain_raw
+```
+
+### PostgreSQL
+
+**Формат строки подключения:**
+```
+postgresql://[username:password@]host[:port][/database][?options]
+```
+
+**Переменные окружения:**
+```bash
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_HOST=postgres.app.orb.local
+POSTGRES_PORT=5432
+POSTGRES_DB=blockchain
+POSTGRES_URI=postgresql://postgres:postgres@postgres.app.orb.local:5432/blockchain
+```
+
+**Локально (Docker Compose):**
+```bash
+POSTGRES_URI=postgresql://postgres:postgres@postgres-dw:5432/blockchain
+POSTGRES_HOST=postgres-dw
+POSTGRES_PORT=5432
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=blockchain
+```
+
+**Production:**
+```bash
+POSTGRES_URI=postgresql://postgres:postgres@213.171.27.223:5433/blockchain
+POSTGRES_HOST=213.171.27.223
+POSTGRES_PORT=5433
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=blockchain
+```
+
+---
+
 ## Структура проекта
 
 ```
 blockchain-pipeline/
 ├── airflow/
 │   └── dags/
-│       └── blockchain_etl_pipeline.py  # Основной DAG
+│       ├── blockchain_etl_pipeline.py  # Основной DAG
+│       ├── el_mongo_to_postgres.py    # EL Pipeline + DBT
+│       └── dbt_pipeline.py            # DBT Pipeline
 ├── app/
 │   ├── main.py              # FastAPI приложение
 │   ├── Dockerfile
 │   └── requirements.txt
+├── dbt/                     # DBT проект
+│   ├── dbt_project.yml
+│   ├── profiles.yml
+│   ├── packages.yml
+│   ├── macros/              # Пользовательские макросы
+│   └── models/              # DBT модели (staging, intermediate, marts)
 ├── dwh/
 │   └── 01_init.sql          # Инициализация PostgreSQL
 ├── docker-compose.yml       # Оркестрация контейнеров
@@ -49,10 +132,13 @@ docker compose up -d
 ## Data Pipeline
 
 ```
-Etherscan API -> MongoDB (raw data) -> PostgresSQL
+Etherscan API -> MongoDB (raw data) -> PostgreSQL -> DBT (transformations)
 ```
 
-**Расписание:** каждые 5 минут (Airflow DAG)
+**Расписание:**
+- EL Pipeline: каждый час (Airflow DAG `el_mongo_to_postgres`)
+- DBT Transformations: после каждой загрузки данных (dbt run + dbt test)
+- DBT Pipeline: каждый час (Airflow DAG `dbt_pipeline`)
 
 ---
 
@@ -87,6 +173,17 @@ curl -X POST "http://localhost:8000/wallets/0xd8dA6BF26964aF9D7eEd9e03E53415D37a
 ```bash
 curl http://localhost:8000/stats
 ```
+
+---
+
+## DBT
+
+Проект включает dbt для трансформации данных:
+- **Staging модели**: Очистка и стандартизация сырых данных
+- **Intermediate модели**: Промежуточные агрегации
+- **Marts модели**: Финальные таблицы для аналитики
+
+Подробнее см. [dbt/README.md](dbt/README.md)
 
 ---
 

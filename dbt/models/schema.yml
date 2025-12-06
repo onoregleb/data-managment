@@ -1,0 +1,67 @@
+version: 2
+
+models:
+  - name: stg_wallets
+    description: "Staging model for wallet data"
+    columns:
+      - name: wallet_id
+        description: "Primary key"
+        tests:
+          - unique
+          - not_null
+      - name: wallet_address
+        description: "Ethereum wallet address"
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_transactions
+    description: "Staging model for transaction data"
+    columns:
+      - name: transaction_id
+        description: "Primary key"
+        tests:
+          - unique
+          - not_null
+      - name: transaction_hash
+        description: "Transaction hash"
+        tests:
+          - unique
+          - not_null
+
+  - name: int_wallet_transactions
+    description: "Intermediate model aggregating wallet transaction statistics"
+    columns:
+      - name: wallet_id
+        tests:
+          - not_null
+      - name: wallet_address
+        tests:
+          - not_null
+
+  - name: fct_wallet_activity
+    description: "Fact table for wallet activity metrics"
+    columns:
+      - name: wallet_id
+        tests:
+          - unique
+          - not_null
+      - name: wallet_address
+        tests:
+          - not_null
+
+  - name: dim_wallets
+    description: "Dimension table for wallets with activity metrics"
+    columns:
+      - name: wallet_id
+        tests:
+          - unique
+          - not_null
+
+  - name: daily_transaction_summary
+    description: "Daily aggregated transaction statistics"
+    columns:
+      - name: transaction_date
+        tests:
+          - unique
+          - not_null

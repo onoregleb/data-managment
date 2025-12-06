@@ -1,0 +1,59 @@
+version: 2
+
+sources:
+  - name: raw
+    description: "Raw blockchain data from PostgreSQL DWH"
+    database: blockchain
+    schema: public
+    tables:
+      - name: wallets
+        description: "Raw wallet data"
+        columns:
+          - name: id
+            description: "Primary key"
+            tests:
+              - unique
+              - not_null
+          - name: address
+            description: "Wallet address (42 characters)"
+            tests:
+              - unique
+              - not_null
+          - name: transaction_count
+            description: "Number of transactions"
+            tests:
+              - not_null
+          - name: loaded_at
+            description: "Timestamp when data was loaded"
+            tests:
+              - not_null
+
+      - name: transactions
+        description: "Raw transaction data"
+        columns:
+          - name: id
+            description: "Primary key"
+            tests:
+              - unique
+              - not_null
+          - name: hash
+            description: "Transaction hash"
+            tests:
+              - unique
+              - not_null
+          - name: wallet_address
+            description: "Wallet address associated with transaction"
+          - name: from_address
+            description: "Sender address"
+          - name: to_address
+            description: "Receiver address"
+          - name: value_eth
+            description: "Transaction value in ETH"
+          - name: block_number
+            description: "Block number"
+          - name: timestamp
+            description: "Transaction timestamp"
+          - name: loaded_at
+            description: "Timestamp when data was loaded"
+            tests:
+              - not_null

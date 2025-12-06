@@ -52,19 +52,14 @@ def extract_transactions(**context):
     client = MongoClient(mongo_uri)
     db = client["blockchain_raw"]
 
-    transactions = list(db.transactions.find())
-    print(f"Extracted {len(transactions)} transactions from MongoDB")
-
-    for tx in transactions:
-        tx["_id"] = str(tx["_id"])
-        if "timestamp" in tx:
-            tx["timestamp"] = tx["timestamp"].isoformat()
-        if "fetched_at" in tx:
-            tx["fetched_at"] = tx["fetched_at"].isoformat()
+    # Считаем количество, но не загружаем все в память
+    tx_count = db.transactions.count_documents({})
+    print(f"Found {tx_count} transactions in MongoDB")
 
     client.close()
-    context["ti"].xcom_push(key="transactions", value=transactions)
-    return len(transactions)
+    # Передаем только количество, не сами данные
+    context["ti"].xcom_push(key="tx_count", value=tx_count)
+    return tx_count
 
 
 def load_wallets(**context):
@@ -125,24 +120,26 @@ def load_wallets(**context):
 
 
 def load_transactions(**context):
-    """Загрузка транзакций в PostgreSQL"""
+    """Загрузка транзакций в PostgreSQL батчами"""
     import psycopg2
     from psycopg2.extras import execute_values
+    from pymongo import MongoClient
 
+    BATCH_SIZE = 1000  # Обрабатываем по 1000 транзакций за раз
+
+    mongo_uri = os.getenv("MONGO_URI", "mongodb://mongo:mongo@mongodb:27017/")
     postgres_uri = os.getenv(
         "POSTGRES_URI", "postgresql://postgres:postgres@postgres-dw:5432/blockchain"
     )
-    transactions = context["ti"].xcom_pull(key="transactions", task_ids="extract_transactions")
 
-    if not transactions:
-        print("No transactions to load")
-        return 0
-
-    conn = psycopg2.connect(postgres_uri)
-    cur = conn.cursor()
+    # Подключаемся к обеим БД
+    mongo_client = MongoClient(mongo_uri)
+    mongo_db = mongo_client["blockchain_raw"]
+    pg_conn = psycopg2.connect(postgres_uri)
+    pg_cur = pg_conn.cursor()
 
     # Создаем таблицу транзакций
-    cur.execute(
+    pg_cur.execute(
         """
         CREATE TABLE IF NOT EXISTS transactions (
             id SERIAL PRIMARY KEY,
@@ -161,40 +158,56 @@ def load_transactions(**context):
     """
     )
 
-    values = []
-    for tx in transactions:
-        values.append(
-            (
-                tx.get("hash"),
-                tx.get("wallet_address"),
-                tx.get("from_address"),
-                tx.get("to_address"),
-                tx.get("value_eth"),
-                tx.get("gas_used"),
-                tx.get("gas_price"),
-                tx.get("block_number"),
-                tx.get("is_error", False),
-                tx.get("timestamp"),
+    total_loaded = 0
+    skip = 0
+
+    # Обрабатываем транзакции батчами
+    while True:
+        transactions = list(mongo_db.transactions.find().skip(skip).limit(BATCH_SIZE))
+
+        if not transactions:
+            break
+
+        values = []
+        for tx in transactions:
+            values.append(
+                (
+                    tx.get("hash"),
+                    tx.get("wallet_address"),
+                    tx.get("from_address"),
+                    tx.get("to_address"),
+                    tx.get("value_eth"),
+                    tx.get("gas_used"),
+                    tx.get("gas_price"),
+                    tx.get("block_number"),
+                    tx.get("is_error", False),
+                    tx.get("timestamp"),
+                )
             )
+
+        execute_values(
+            pg_cur,
+            """
+            INSERT INTO transactions (hash, wallet_address, from_address, to_address, value_eth, gas_used, gas_price, block_number, is_error, timestamp)
+            VALUES %s
+            ON CONFLICT (hash) DO UPDATE SET
+                loaded_at = CURRENT_TIMESTAMP
+            """,
+            values,
         )
 
-    execute_values(
-        cur,
-        """
-        INSERT INTO transactions (hash, wallet_address, from_address, to_address, value_eth, gas_used, gas_price, block_number, is_error, timestamp)
-        VALUES %s
-        ON CONFLICT (hash) DO UPDATE SET
-            loaded_at = CURRENT_TIMESTAMP
-        """,
-        values,
-    )
+        pg_conn.commit()
+        total_loaded += len(transactions)
+        skip += BATCH_SIZE
 
-    conn.commit()
-    cur.close()
-    conn.close()
+        print(f"Loaded batch: {len(transactions)} transactions (total: {total_loaded})")
 
-    print(f"Loaded {len(transactions)} transactions to PostgreSQL")
-    return len(transactions)
+    pg_cur.close()
+    pg_conn.close()
+    mongo_client.close()
+
+    print(f"✅ Successfully loaded {total_loaded} transactions to PostgreSQL")
+    return total_loaded
 
 
 def log_stats(**context):

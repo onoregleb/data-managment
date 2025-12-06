@@ -40,78 +40,12 @@ jobs:
         run: sqlfluff lint dwh/ --dialect postgres || true
 
   # ==============================================================================
-  # Test - Тестирование DBT моделей
-  # ==============================================================================
-  test:
-    name: Test DBT
-    runs-on: ubuntu-latest
-    needs: lint
-
-    services:
-      postgres:
-        image: postgres:15-alpine
-        env:
-          POSTGRES_DB: blockchain_test
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install DBT
-        run: pip install dbt-postgres
-
-      - name: Create test profiles.yml
-        run: |
-          mkdir -p ~/.dbt
-          cat > ~/.dbt/profiles.yml << EOF
-          blockchain:
-            target: dev
-            outputs:
-              dev:
-                type: postgres
-                host: localhost
-                port: 5432
-                user: postgres
-                password: postgres
-                dbname: blockchain_test
-                schema: public
-                threads: 2
-          EOF
-
-      - name: Initialize test database
-        run: |
-          PGPASSWORD=postgres psql -h localhost -U postgres -d blockchain_test -f dwh/01_init.sql
-
-      - name: DBT debug
-        run: cd dbt && dbt debug
-
-      - name: DBT run
-        run: cd dbt && dbt run || true
-
-      - name: DBT test
-        run: cd dbt && dbt test || true
-
-  # ==============================================================================
   # Deploy - Автоматический деплой на сервер
   # ==============================================================================
   deploy:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: [lint, test]
+    needs: lint
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
 
     steps:

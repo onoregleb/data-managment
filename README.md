@@ -2,7 +2,7 @@
 
 ETL-пайплайн для сбора и анализа данных Ethereum блокчейна.
 
-**Архитектура:** FastAPI → MongoDB → Airflow → PostgreSQL → DBT → DataMart
+**Архитектура:** FastAPI → MongoDB → Airflow → PostgreSQL
 
 ---
 
@@ -28,18 +28,11 @@ blockchain-pipeline/
 │   ├── main.py              # FastAPI приложение
 │   ├── Dockerfile
 │   └── requirements.txt
-├── dbt/
-│   ├── dbt_project.yml      # Конфигурация DBT
-│   ├── profiles.yml         # Подключение к PostgreSQL
-│   └── models/
-│       ├── staging/         # STG слой (views)
-│       └── marts/           # Витрины
 ├── dwh/
 │   └── 01_init.sql          # Инициализация PostgreSQL
 ├── docker-compose.yml       # Оркестрация контейнеров
 ├── .pre-commit-config.yaml  # Pre-commit хуки
-├── pyproject.toml           # Конфигурация Python tools
-└── .sqlfluff                # Конфигурация SQL linter
+└── pyproject.toml           # Конфигурация Python tools
 ```
 
 ---
@@ -56,7 +49,7 @@ docker compose up -d
 ## Data Pipeline
 
 ```
-Etherscan API -> MongoDB (raw data) -> PostgresSQL -> DBT
+Etherscan API -> MongoDB (raw data) -> PostgresSQL
 ```
 
 **Расписание:** каждые 5 минут (Airflow DAG)
@@ -69,17 +62,7 @@ Etherscan API -> MongoDB (raw data) -> PostgresSQL -> DBT
 
 При push в `main`/`master` автоматически:
 1. **lint** — Проверяется код (black, isort, flake8, sqlfluff)
-2. **test** — Тестируются DBT модели
-3. **deploy** — Деплоится на сервер через SSH
-
-### Запуск DBT
-
-```bash
-docker exec -it airflow-scheduler bash
-cd /opt/airflow/dbt
-dbt run
-dbt test
-```
+2. **deploy** — Деплоится на сервер через SSH
 
 ---
 
@@ -109,25 +92,29 @@ curl http://localhost:8000/stats
 
 ## SQL Примеры
 
-### Оконные функции в ODS
+### Оконные функции
 
 ```sql
 -- Кумулятивная сумма и скользящее среднее
 SELECT
     wallet_address,
     value_eth,
-    SUM(value_eth) OVER (PARTITION BY wallet_address ORDER BY tx_timestamp) AS cumulative_eth,
+    SUM(value_eth) OVER (PARTITION BY wallet_address ORDER BY timestamp) AS cumulative_eth,
     AVG(value_eth) OVER (PARTITION BY wallet_address ROWS BETWEEN 9 PRECEDING AND CURRENT ROW) AS ma_10
-FROM ods_transactions;
+FROM transactions;
 ```
 
-### Аналитика из витрин
+### Аналитика
 
 ```sql
 -- Топ кошельков по объёму
-SELECT wallet_address, total_volume_eth, volume_rank
-FROM mart_wallet_analytics
-ORDER BY volume_rank
+SELECT
+    wallet_address,
+    COUNT(*) as tx_count,
+    SUM(value_eth) as total_volume
+FROM transactions
+GROUP BY wallet_address
+ORDER BY total_volume DESC
 LIMIT 10;
 ```
 

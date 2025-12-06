@@ -12,11 +12,10 @@ x-airflow-common: &airflow-common
     MONGO_URI: mongodb://mongo:mongo@mongodb:27017/
     POSTGRES_URI: postgresql://postgres:postgres@postgres-dw:5432/blockchain
     ETHERSCAN_API_KEY: ${ETHERSCAN_API_KEY:-YourApiKeyToken}
-    _PIP_ADDITIONAL_REQUIREMENTS: 'pymongo psycopg2-binary httpx dbt-postgres==1.7.4'
+    _PIP_ADDITIONAL_REQUIREMENTS: 'pymongo psycopg2-binary httpx'
   volumes:
     - ./airflow/dags:/opt/airflow/dags
     - ./airflow/logs:/opt/airflow/logs
-    - ./dbt:/opt/airflow/dbt
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     postgres-airflow:
@@ -170,28 +169,6 @@ services:
     # Resource limits
     mem_limit: 512m
     cpus: 0.2
-
-  # DBT - трансформация данных
-  dbt:
-    build:
-      context: ./dbt
-      dockerfile: Dockerfile
-    container_name: dbt
-    environment:
-      DBT_HOST: postgres-dw
-    volumes:
-      - ./dbt:/dbt
-    depends_on:
-      postgres-dw:
-        condition: service_healthy
-    networks:
-      - pipeline-network
-    # Resource limits
-    mem_limit: 256m
-    cpus: 0.15
-    # DBT запускается вручную или через Airflow
-    profiles:
-      - dbt
 
 volumes:
   mongodb_data:

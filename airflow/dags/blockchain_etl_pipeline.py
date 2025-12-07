@@ -454,7 +454,7 @@ with DAG(
     "blockchain_etl_pipeline",
     default_args=default_args,
     description="Full ETL: Fetch Blockchain Data via Etherscan → MongoDB → PostgreSQL",
-    schedule_interval="*/5 * * * *",  # Каждые 5 минут
+    schedule_interval="*/30 * * * *",  # Каждые 30 минут
     start_date=datetime(2024, 1, 1),
     catchup=False,
     max_active_runs=1,

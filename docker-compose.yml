@@ -48,7 +48,7 @@ services:
     networks:
       - pipeline-network
     # Resource limits
-    mem_limit: 768m
+    mem_limit: 512m
     cpus: 0.35
 
   # PostgreSQL - Data Warehouse
@@ -73,7 +73,7 @@ services:
       - pipeline-network
     # Resource limits
     mem_limit: 384m
-    cpus: 0.2
+    cpus: 0.25
 
   # PostgreSQL для Airflow
   postgres-airflow:
@@ -134,8 +134,8 @@ services:
       start_period: 30s
     restart: always
     # Resource limits
-    mem_limit: 768m
-    cpus: 0.4
+    mem_limit: 512m
+    cpus: 0.35
 
   # Airflow Scheduler
   airflow-scheduler:
@@ -144,8 +144,8 @@ services:
     command: scheduler
     restart: always
     # Resource limits
-    mem_limit: 896m
-    cpus: 0.5
+    mem_limit: 640m
+    cpus: 0.45
 
   # Airflow Init (одноразовый запуск)
   airflow-init:
@@ -168,8 +168,8 @@ services:
     volumes:
       - ./airflow:/sources
     # Resource limits
-    mem_limit: 512m
-    cpus: 0.2
+    mem_limit: 384m
+    cpus: 0.15
 
 volumes:
   mongodb_data:

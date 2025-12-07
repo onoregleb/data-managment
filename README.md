@@ -145,6 +145,7 @@ Etherscan API -> MongoDB (raw data) -> PostgreSQL -> DBT (transformations)
 ```
 
 **Расписание:**
+- ETL Pipeline: каждые 30 минут (Airflow DAG `blockchain_etl_pipeline`)
 - EL Pipeline: каждый час (Airflow DAG `el_mongo_to_postgres`)
 - DBT Transformations: после каждой загрузки данных (dbt run + dbt test)
 - DBT Pipeline: каждый час (Airflow DAG `dbt_pipeline`)
@@ -230,13 +231,13 @@ LIMIT 10;
 
 | Сервис | RAM | vCPU |
 |--------|-----|------|
-| MongoDB | 768 MB | 0.35 |
-| PostgreSQL DW | 384 MB | 0.20 |
+| MongoDB | 512 MB | 0.35 |
+| PostgreSQL DW | 384 MB | 0.25 |
 | PostgreSQL Airflow | 256 MB | 0.15 |
 | App (FastAPI) | 256 MB | 0.20 |
-| Airflow Webserver | 768 MB | 0.40 |
-| Airflow Scheduler | 896 MB | 0.50 |
-| Airflow Init | 512 MB | 0.20 |
-| **Итого** | **~3.8 GB** | **2.0** |
+| Airflow Webserver | 512 MB | 0.35 |
+| Airflow Scheduler | 640 MB | 0.45 |
+| Airflow Init | 384 MB | 0.15 |
+| **Итого** | **~2.9 GB** | **1.9** |
 
 ---

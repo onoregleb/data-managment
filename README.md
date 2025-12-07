@@ -26,14 +26,14 @@ ETL-пайплайн для сбора и анализа данных Ethereum �
 mongodb://[username:password@]host[:port][/database][?options]
 ```
 
-**Переменные окружения:**
+**Переменные окружения (пример):**
 ```bash
 MONGO_INITDB_ROOT_USERNAME=mongo
 MONGO_INITDB_ROOT_PASSWORD=mongo
-MONGO_HOST=mongodb.app.orb.local
+MONGO_HOST=localhost
 MONGO_PORT=27017
 MONGO_INITDB_DATABASE=blockchain_raw
-MONGO_URL=mongodb://mongo:mongo@mongodb.app.orb.local:27017/blockchain_raw
+MONGO_URL=mongodb://mongo:mongo@localhost:27017/blockchain_raw
 ```
 
 **Локально (Docker Compose):**
@@ -60,14 +60,14 @@ MONGO_URL=mongodb://mongo:mongo@213.171.27.223:27017/blockchain_raw
 postgresql://[username:password@]host[:port][/database][?options]
 ```
 
-**Переменные окружения:**
+**Переменные окружения (пример):**
 ```bash
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
-POSTGRES_HOST=postgres.app.orb.local
+POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
 POSTGRES_DB=blockchain
-POSTGRES_URI=postgresql://postgres:postgres@postgres.app.orb.local:5432/blockchain
+POSTGRES_URI=postgresql://postgres:postgres@localhost:5432/blockchain
 ```
 
 **Примечание:** Для локального Docker Compose используется внутренний порт 5432, для внешнего доступа - 5433.

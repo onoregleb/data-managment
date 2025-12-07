@@ -12,7 +12,7 @@ x-airflow-common: &airflow-common
     MONGO_URI: mongodb://mongo:mongo@mongodb:27017/
     POSTGRES_URI: postgresql://postgres:postgres@postgres-dw:5432/blockchain
     ETHERSCAN_API_KEY: ${ETHERSCAN_API_KEY:-YourApiKeyToken}
-    _PIP_ADDITIONAL_REQUIREMENTS: 'pymongo psycopg2-binary httpx dbt-postgres'
+    _PIP_ADDITIONAL_REQUIREMENTS: 'pymongo psycopg2-binary httpx dbt-core dbt-postgres'
   volumes:
     - ./airflow/dags:/opt/airflow/dags
     - ./airflow/logs:/opt/airflow/logs

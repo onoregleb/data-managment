@@ -235,9 +235,9 @@ LIMIT 10;
 | PostgreSQL DW | 384 MB | 0.25 |
 | PostgreSQL Airflow | 256 MB | 0.15 |
 | App (FastAPI) | 256 MB | 0.20 |
-| Airflow Webserver | 512 MB | 0.35 |
-| Airflow Scheduler | 640 MB | 0.45 |
+| Airflow Webserver | 768 MB | 0.40 |
+| Airflow Scheduler | 768 MB | 0.50 |
 | Airflow Init | 384 MB | 0.15 |
-| **Итого** | **~2.9 GB** | **1.9** |
+| **Итого** | **~3.3 GB** | **2.0** |
 
 ---

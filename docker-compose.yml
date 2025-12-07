@@ -134,8 +134,8 @@ services:
       start_period: 30s
     restart: always
     # Resource limits
-    mem_limit: 512m
-    cpus: 0.35
+    mem_limit: 768m
+    cpus: 0.4
 
   # Airflow Scheduler
   airflow-scheduler:
@@ -144,8 +144,8 @@ services:
     command: scheduler
     restart: always
     # Resource limits
-    mem_limit: 640m
-    cpus: 0.45
+    mem_limit: 768m
+    cpus: 0.5
 
   # Airflow Init (одноразовый запуск)
   airflow-init:

@@ -53,21 +53,21 @@ with DAG(
     # Task 1: dbt deps (установка зависимостей)
     dbt_deps = BashOperator(
         task_id="dbt_deps",
-        bash_command=f"cd {DBT_PROJECT_DIR} && python -m dbt deps --profiles-dir {DBT_PROFILES_DIR}",
+        bash_command=f"export PATH=$PATH:~/.local/bin && cd {DBT_PROJECT_DIR} && dbt deps --profiles-dir {DBT_PROFILES_DIR}",
         env=dbt_env,
     )
 
     # Task 2: dbt run (запуск моделей)
     dbt_run = BashOperator(
         task_id="dbt_run",
-        bash_command=f"cd {DBT_PROJECT_DIR} && python -m dbt run --profiles-dir {DBT_PROFILES_DIR} --target prod",
+        bash_command=f"export PATH=$PATH:~/.local/bin && cd {DBT_PROJECT_DIR} && dbt run --profiles-dir {DBT_PROFILES_DIR} --target prod",
         env=dbt_env,
     )
 
     # Task 3: dbt test (запуск тестов)
     dbt_test = BashOperator(
         task_id="dbt_test",
-        bash_command=f"cd {DBT_PROJECT_DIR} && python -m dbt test --profiles-dir {DBT_PROFILES_DIR} --target prod",
+        bash_command=f"export PATH=$PATH:~/.local/bin && cd {DBT_PROJECT_DIR} && dbt test --profiles-dir {DBT_PROFILES_DIR} --target prod",
         env=dbt_env,
     )
 

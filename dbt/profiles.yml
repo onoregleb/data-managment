@@ -1,5 +1,5 @@
 blockchain_dwh:
-  target: dev
+  target: prod
   outputs:
     dev:
       type: postgres
@@ -12,10 +12,10 @@ blockchain_dwh:
       threads: 4
     prod:
       type: postgres
-      host: "{{ env_var('POSTGRES_HOST', 'postgres-dw') }}"
-      user: "{{ env_var('POSTGRES_USER', 'postgres') }}"
-      password: "{{ env_var('POSTGRES_PASSWORD', 'postgres') }}"
+      host: postgres-dw
+      user: postgres
+      password: postgres
       port: 5432
-      dbname: "{{ env_var('POSTGRES_DB', 'blockchain') }}"
+      dbname: blockchain
       schema: public
       threads: 4

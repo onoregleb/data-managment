@@ -28,12 +28,12 @@ mongodb://[username:password@]host[:port][/database][?options]
 
 **Переменные окружения:**
 ```bash
-MONGO_INITDB_ROOT_USERNAME=root
-MONGO_INITDB_ROOT_PASSWORD=root
+MONGO_INITDB_ROOT_USERNAME=mongo
+MONGO_INITDB_ROOT_PASSWORD=mongo
 MONGO_HOST=mongodb.app.orb.local
 MONGO_PORT=27017
-MONGO_INITDB_DATABASE=prod
-MONGO_URL=mongodb://root:root@mongodb.app.orb.local:27017
+MONGO_INITDB_DATABASE=blockchain_raw
+MONGO_URL=mongodb://mongo:mongo@mongodb.app.orb.local:27017/blockchain_raw
 ```
 
 **Локально (Docker Compose):**
@@ -70,6 +70,8 @@ POSTGRES_DB=blockchain
 POSTGRES_URI=postgresql://postgres:postgres@postgres.app.orb.local:5432/blockchain
 ```
 
+**Примечание:** Для локального Docker Compose используется внутренний порт 5432, для внешнего доступа - 5433.
+
 **Локально (Docker Compose):**
 ```bash
 POSTGRES_URI=postgresql://postgres:postgres@postgres-dw:5432/blockchain
@@ -89,6 +91,13 @@ POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
 POSTGRES_DB=blockchain
 ```
+
+**Подключение через DBeaver / pgAdmin:**
+- Host: `213.171.27.223`
+- Port: `5433`
+- Database: `blockchain`
+- Username: `postgres`
+- Password: `postgres`
 
 ---
 

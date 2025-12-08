@@ -281,7 +281,7 @@ with DAG(
 
     dbt_run = BashOperator(
         task_id="dbt_run",
-        bash_command=f"export PATH=$PATH:/home/airflow/.local/bin && cd {DBT_PROJECT_DIR} && dbt run --profiles-dir {DBT_PROFILES_DIR} --target prod",
+        bash_command=f"export PATH=$PATH:/home/airflow/.local/bin && export PYTHONPATH=$PYTHONPATH:/home/airflow/.local/lib/python3.8/site-packages && cd {DBT_PROJECT_DIR} && dbt run --profiles-dir {DBT_PROFILES_DIR} --target prod",
         env={
             "DBT_PROJECT_DIR": DBT_PROJECT_DIR,
             "DBT_PROFILES_DIR": DBT_PROFILES_DIR,
@@ -295,7 +295,7 @@ with DAG(
 
     dbt_test = BashOperator(
         task_id="dbt_test",
-        bash_command=f"export PATH=$PATH:/home/airflow/.local/bin && cd {DBT_PROJECT_DIR} && dbt test --profiles-dir {DBT_PROFILES_DIR} --target prod",
+        bash_command=f"export PATH=$PATH:/home/airflow/.local/bin && export PYTHONPATH=$PYTHONPATH:/home/airflow/.local/lib/python3.8/site-packages && cd {DBT_PROJECT_DIR} && dbt test --profiles-dir {DBT_PROFILES_DIR} --target prod",
         env={
             "DBT_PROJECT_DIR": DBT_PROJECT_DIR,
             "DBT_PROFILES_DIR": DBT_PROFILES_DIR,

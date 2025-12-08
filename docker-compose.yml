@@ -48,8 +48,8 @@ services:
     networks:
       - pipeline-network
     # Resource limits
-    mem_limit: 512m
-    cpus: 0.35
+    mem_limit: 1024m
+    cpus: 0.5
 
   # PostgreSQL - Data Warehouse
   postgres-dw:
@@ -72,8 +72,8 @@ services:
     networks:
       - pipeline-network
     # Resource limits
-    mem_limit: 384m
-    cpus: 0.25
+    mem_limit: 2048m
+    cpus: 1.0
 
   # PostgreSQL для Airflow
   postgres-airflow:
@@ -93,8 +93,8 @@ services:
     networks:
       - pipeline-network
     # Resource limits
-    mem_limit: 256m
-    cpus: 0.15
+    mem_limit: 512m
+    cpus: 0.5
 
   # Blockchain App Service (FastAPI)
   app:
@@ -116,8 +116,8 @@ services:
     networks:
       - pipeline-network
     # Resource limits
-    mem_limit: 256m
-    cpus: 0.2
+    mem_limit: 512m
+    cpus: 0.5
 
   # Airflow Webserver
   airflow-webserver:
@@ -134,8 +134,8 @@ services:
       start_period: 30s
     restart: always
     # Resource limits
-    mem_limit: 768m
-    cpus: 0.4
+    mem_limit: 1024m
+    cpus: 0.8
 
   # Airflow Scheduler
   airflow-scheduler:
@@ -144,8 +144,8 @@ services:
     command: scheduler
     restart: always
     # Resource limits
-    mem_limit: 768m
-    cpus: 0.5
+    mem_limit: 1536m
+    cpus: 1.0
 
   # Airflow Init (одноразовый запуск)
   airflow-init:

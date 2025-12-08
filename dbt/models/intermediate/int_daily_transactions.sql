@@ -5,6 +5,9 @@
     )
 }}
 
+{% set granularity = 'daily' %}
+-- Aggregating on {{ granularity }} basis
+
 with transactions as (
     select * from {{ ref('stg_transactions') }}
 ),

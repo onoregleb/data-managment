@@ -3,6 +3,8 @@ version: 2
 models:
   - name: stg_wallets
     description: "Staging model for wallet data"
+    tests:
+      - elementary.volume_anomalies
     columns:
       - name: wallet_id
         description: "Primary key"
@@ -17,6 +19,9 @@ models:
 
   - name: stg_transactions
     description: "Staging model for transaction data"
+    tests:
+      - elementary.freshness_anomalies:
+          timestamp_column: transaction_timestamp
     columns:
       - name: transaction_id
         description: "Primary key"
@@ -28,40 +33,77 @@ models:
         tests:
           - unique
           - not_null
+      - name: is_error
+        description: "Transaction error status"
+        tests:
+          - accepted_values:
+              values: [true, false]
+      - name: transaction_timestamp
+        description: "Time of transaction"
+        tests:
+          - elementary.event_freshness_anomalies
 
   - name: int_wallet_transactions
     description: "Intermediate model aggregating wallet transaction statistics"
+    tests:
+      - elementary.all_columns_anomalies
     columns:
       - name: wallet_id
+        description: "Wallet identifier"
         tests:
           - not_null
       - name: wallet_address
+        description: "Wallet address"
         tests:
+          - not_null
+
+  - name: int_daily_transactions
+    description: "Intermediate model for daily transaction aggregation"
+    columns:
+      - name: transaction_date
+        description: "Date of transaction"
+        tests:
+          - unique
           - not_null
 
   - name: fct_wallet_activity
     description: "Fact table for wallet activity metrics"
     columns:
       - name: wallet_id
+        description: "Wallet unique identifier"
         tests:
           - unique
           - not_null
+          - relationships:
+              to: ref('dim_wallets')
+              field: wallet_id
       - name: wallet_address
+        description: "Wallet public address"
         tests:
           - not_null
+      - name: is_active
+        description: "Flag indicating if wallet has transactions"
+        tests:
+          - elementary.dimension_anomalies
 
   - name: dim_wallets
     description: "Dimension table for wallets with activity metrics"
     columns:
       - name: wallet_id
+        description: "Wallet unique identifier"
         tests:
           - unique
           - not_null
+      - name: actual_tx_count
+        description: "Count of actual transactions"
+        tests:
+          - elementary.column_anomalies
 
   - name: daily_transaction_summary
     description: "Daily aggregated transaction statistics"
     columns:
       - name: transaction_date
+        description: "Date of summary"
         tests:
           - unique
           - not_null

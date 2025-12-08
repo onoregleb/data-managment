@@ -10,10 +10,10 @@ ETL-пайплайн для сбора и анализа данных Ethereum �
 
 | Сервис | URL | Credentials |
 |--------|-----|-------------|
-| **Airflow** | http://213.171.27.223:8080 | admin / admin |
-| **FastAPI** | http://213.171.27.223:8000/docs | - |
-| **PostgreSQL DWH** | 213.171.27.223:5433 | postgres / postgres |
-| **MongoDB** | 213.171.27.223:27017 | mongo / mongo |
+| **Airflow** | http://213.171.31.111:8080 | admin / admin |
+| **FastAPI** | http://213.171.31.111:8000/docs | - |
+| **PostgreSQL DWH** | 213.171.31.111:5433 | postgres / postgres |
+| **MongoDB** | 213.171.31.111:27017 | mongo / mongo |
 
 ---
 

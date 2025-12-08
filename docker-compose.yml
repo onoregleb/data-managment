@@ -8,6 +8,7 @@ x-airflow-common: &airflow-common
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth'
     AIRFLOW__WEBSERVER__EXPOSE_CONFIG: 'true'
+    AIRFLOW__WEBSERVER__WEB_SERVER_HOST: '0.0.0.0'
     # Connections
     MONGO_URI: mongodb://mongo:mongo@mongodb:27017/
     POSTGRES_URI: postgresql://postgres:postgres@postgres-dw:5432/blockchain

@@ -68,6 +68,10 @@ models:
 
   - name: fct_wallet_activity
     description: "Fact table for wallet activity metrics"
+    data_tests:
+      - elementary.dimension_anomalies:
+          dimensions:
+            - is_active
     columns:
       - name: wallet_id
         description: "Wallet unique identifier"
@@ -83,9 +87,6 @@ models:
           - not_null
       - name: is_active
         description: "Flag indicating if wallet has transactions"
-        data_tests:
-          - elementary.dimension_anomalies:
-              dimensions: [is_active]
 
   - name: dim_wallets
     description: "Dimension table for wallets with activity metrics"

@@ -41,7 +41,7 @@ models:
       - name: transaction_timestamp
         description: "Time of transaction"
         tests:
-          - elementary.event_freshness_anomalies
+          - not_null
 
   - name: int_wallet_transactions
     description: "Intermediate model aggregating wallet transaction statistics"

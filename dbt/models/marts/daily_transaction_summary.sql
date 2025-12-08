@@ -1,9 +1,14 @@
 {{
     config(
-        materialized='table',
+        materialized='incremental',
+        unique_key='transaction_date',
+        incremental_strategy='delete+insert',
         tags=['marts', 'summary', 'daily']
     )
 }}
+
+{% set model_type = 'incremental_delete_insert' %}
+-- Model type: {{ model_type }}
 
 with daily_stats as (
     select * from {{ ref('int_daily_transactions') }}
@@ -24,3 +29,7 @@ select
     avg_gas_used,
     current_timestamp as dbt_updated_at
 from daily_stats
+
+{% if is_incremental() %}
+  where transaction_date >= (select coalesce(max(transaction_date), '1970-01-01') from {{ this }})
+{% endif %}

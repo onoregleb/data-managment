@@ -5,6 +5,9 @@
     )
 }}
 
+{% set model_description = 'Aggregates wallet transaction stats' %}
+-- {{ model_description }}
+
 with wallets as (
     select * from {{ ref('stg_wallets') }}
 ),

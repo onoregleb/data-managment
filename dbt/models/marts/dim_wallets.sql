@@ -5,6 +5,9 @@
     )
 }}
 
+{% set dimension_name = 'wallets' %}
+-- Dimension table for {{ dimension_name }}
+
 with wallets as (
     select * from {{ ref('stg_wallets') }}
 ),

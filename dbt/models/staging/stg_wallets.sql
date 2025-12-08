@@ -5,6 +5,9 @@
     )
 }}
 
+{% set table_name = 'wallets' %}
+-- Model for {{ table_name }}
+
 with source as (
     select * from {{ source('raw', 'wallets') }}
 ),

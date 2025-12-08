@@ -1,9 +1,13 @@
 {{
     config(
-        materialized='table',
+        materialized='incremental',
+        unique_key='wallet_id',
         tags=['marts', 'fact', 'wallets']
     )
 }}
+
+{% set model_type = 'incremental_merge' %}
+-- Model type: {{ model_type }}
 
 with wallet_stats as (
     select * from {{ ref('int_wallet_transactions') }}
@@ -26,3 +30,8 @@ select
     end as is_active,
     current_timestamp as dbt_updated_at
 from wallet_stats
+
+{% if is_incremental() %}
+  -- Incremental logic: only update wallets with new activity
+  where last_transaction_at > (select coalesce(max(last_transaction_at), '1970-01-01') from {{ this }})
+{% endif %}

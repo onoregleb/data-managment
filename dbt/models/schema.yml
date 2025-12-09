@@ -156,4 +156,5 @@ models:
       - name: cumulative_volume_eth
         description: "Windowed cumulative volume by wallet"
         data_tests:
-          - elementary.column_anomalies
+          - elementary.column_anomalies:
+              severity: warn

@@ -78,7 +78,7 @@ with DAG(
             f"export PYTHONPATH=$PYTHONPATH:/home/airflow/.local/lib/python3.8/site-packages && "
             f"cd {DBT_PROJECT_DIR} && "
             f"mkdir -p edr_reports && "
-            f"edr report --project-dir {DBT_PROJECT_DIR} --profiles-dir {DBT_PROFILES_DIR} --profile-target prod --reports-dir edr_reports"
+            f"edr report --project-dir {DBT_PROJECT_DIR} --profiles-dir {DBT_PROFILES_DIR} --profile-target prod --target-path edr_reports"
         ),
         env=dbt_env,
     )

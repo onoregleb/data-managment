@@ -19,3 +19,16 @@ blockchain_dwh:
       dbname: "{{ env_var('POSTGRES_DB', 'blockchain') }}"
       schema: "{{ env_var('POSTGRES_SCHEMA', 'public') }}"
       threads: 4
+
+elementary:
+  target: prod
+  outputs:
+    prod:
+      type: postgres
+      host: "{{ env_var('POSTGRES_HOST', 'postgres-dw') }}"
+      user: "{{ env_var('POSTGRES_USER', 'postgres') }}"
+      password: "{{ env_var('POSTGRES_PASSWORD', 'postgres') }}"
+      port: "{{ env_var('POSTGRES_PORT', '5432') | int }}"
+      dbname: "{{ env_var('POSTGRES_DB', 'blockchain') }}"
+      schema: "{{ env_var('POSTGRES_EDR_SCHEMA', 'edr') }}"
+      threads: 4

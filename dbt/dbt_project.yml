@@ -16,6 +16,9 @@ clean-targets:
   - "target"
   - "dbt_packages"
 
+on-run-start:
+  - "{{ drop_dbt_backups() }}"
+
 models:
   blockchain_dwh:
     staging:

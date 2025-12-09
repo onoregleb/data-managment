@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     wallet_address VARCHAR(42),
     from_address VARCHAR(42),
     to_address VARCHAR(42),
-    value_eth DECIMAL(30, 18),
+    value_eth DECIMAL(38, 18),
     gas_used BIGINT,
     gas_price BIGINT,
     block_number BIGINT,

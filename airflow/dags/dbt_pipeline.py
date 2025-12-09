@@ -57,6 +57,18 @@ with DAG(
         env=dbt_env,
     )
 
+    # Task 1.5: elementary monitor models (dbt run) в встроенном проекте Elementary
+    edr_models = BashOperator(
+        task_id="edr_models",
+        bash_command=(
+            "export PATH=$PATH:/home/airflow/.local/bin && "
+            "export PYTHONPATH=$PYTHONPATH:/home/airflow/.local/lib/python3.8/site-packages && "
+            "cd /home/airflow/.local/lib/python3.8/site-packages/elementary/monitor/dbt_project && "
+            "dbt run --profiles-dir /opt/airflow/dbt --target prod --full-refresh"
+        ),
+        env=dbt_env,
+    )
+
     # Task 2: dbt run (запуск моделей)
     dbt_run = BashOperator(
         task_id="dbt_run",
@@ -84,4 +96,4 @@ with DAG(
     )
 
     # Pipeline: deps -> run -> test -> edr report
-    dbt_deps >> dbt_run >> dbt_test >> edr_report
+    dbt_deps >> edr_models >> dbt_run >> dbt_test >> edr_report

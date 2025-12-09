@@ -71,5 +71,17 @@ with DAG(
         env=dbt_env,
     )
 
-    # Pipeline: deps -> run -> test
-    dbt_deps >> dbt_run >> dbt_test
+    edr_report = BashOperator(
+        task_id="edr_report",
+        bash_command=(
+            f"export PATH=$PATH:/home/airflow/.local/bin && "
+            f"export PYTHONPATH=$PYTHONPATH:/home/airflow/.local/lib/python3.8/site-packages && "
+            f"cd {DBT_PROJECT_DIR} && "
+            f"mkdir -p edr_reports && "
+            f"edr report --project-dir {DBT_PROJECT_DIR} --profiles-dir {DBT_PROFILES_DIR} --target prod --reports-dir edr_reports"
+        ),
+        env=dbt_env,
+    )
+
+    # Pipeline: deps -> run -> test -> edr report
+    dbt_deps >> dbt_run >> dbt_test >> edr_report

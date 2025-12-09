@@ -9,7 +9,7 @@
 -- Dimension table for {{ dimension_name }}
 
 with wallets as (
-    select * from {{ ref('stg_wallets') }}
+    select * from {{ ref('ods_wallets') }}
 ),
 
 wallet_activity as (

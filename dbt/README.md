@@ -19,6 +19,9 @@ dbt/
 │   ├── staging/         # Staging модели (views)
 │   │   ├── stg_wallets.sql
 │   │   └── stg_transactions.sql
+│   ├── ods/             # ODS слой (views с валидацией и окнами)
+│   │   ├── ods_wallets.sql
+│   │   └── ods_transactions.sql
 │   ├── intermediate/    # Промежуточные модели (views)
 │   │   ├── int_wallet_transactions.sql
 │   │   └── int_daily_transactions.sql
@@ -34,6 +37,10 @@ dbt/
 ### Staging (staging/)
 - **stg_wallets**: Очистка и переименование данных кошельков
 - **stg_transactions**: Очистка и переименование данных транзакций
+
+### ODS (ods/)
+- **ods_wallets**: Валидированные кошельки с адресами и метаданными
+- **ods_transactions**: Транзакции с оконными метриками (cumulative volume, lag)
 
 ### Intermediate (intermediate/)
 - **int_wallet_transactions**: Агрегация статистики по кошелькам

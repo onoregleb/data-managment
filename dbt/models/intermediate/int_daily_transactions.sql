@@ -9,7 +9,7 @@
 -- Aggregating on {{ granularity }} basis
 
 with transactions as (
-    select * from {{ ref('stg_transactions') }}
+    select * from {{ ref('ods_transactions') }}
 ),
 
 daily_transactions as (

@@ -33,6 +33,28 @@ ETHERSCAN_API_KEY = os.getenv("ETHERSCAN_API_KEY", "YourApiKeyToken")
 ETHERSCAN_BASE_URL = "https://api.etherscan.io/v2/api"
 CHAIN_ID = 1  # Ethereum Mainnet
 
+APP_BASE_URL = os.getenv("APP_BASE_URL", "http://app:8000")
+
+
+def trigger_app_fetch(**context):
+    """
+    Дёргаем REST ручку FastAPI, чтобы загрузить транзакции в MongoDB.
+    В Airflow будет видно успешное выполнение вызова API.
+    """
+    import httpx
+
+    results = []
+    with httpx.Client(timeout=60.0) as http_client:
+        for wallet in MONITORED_WALLETS:
+            url = f"{APP_BASE_URL}/wallets/{wallet}/fetch"
+            response = http_client.post(url)
+            response.raise_for_status()
+            payload = response.json()
+            results.append({"wallet": wallet, "response": payload})
+            print(f"Triggered fetch for {wallet}: {payload}")
+
+    return {"wallets_triggered": len(results)}
+
 
 def fetch_token_transfers(**context):
     """
@@ -461,10 +483,10 @@ with DAG(
     tags=["etl", "blockchain", "ethereum", "mongodb", "postgresql"],
 ) as dag:
 
-    # Task 1: Сбор данных с Etherscan
-    fetch_data = PythonOperator(
-        task_id="fetch_blockchain_data",
-        python_callable=fetch_token_transfers,
+    # Task 1: Дергаем FastAPI, чтобы сервис сходил за транзакциями
+    trigger_api = PythonOperator(
+        task_id="trigger_fastapi_fetch",
+        python_callable=trigger_app_fetch,
     )
 
     # Task 2: Извлечение из MongoDB
@@ -486,4 +508,4 @@ with DAG(
     )
 
     # Pipeline: fetch → extract → load → stats
-    fetch_data >> extract_data >> load_data >> statistics
+    trigger_api >> extract_data >> load_data >> statistics

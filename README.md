@@ -14,6 +14,7 @@ ETL-пайплайн для сбора и анализа данных Ethereum �
 | **FastAPI** | http://213.171.31.111:8000/docs | - |
 | **PostgreSQL DWH** | 213.171.31.111:5433 | postgres / postgres |
 | **MongoDB** | 213.171.31.111:27017 | mongo / mongo |
+| **EDR Report (Elementary)** | CI artifact `edr-report` и `/opt/airflow/dbt/edr_reports/index.html` | - |
 
 ---
 
@@ -119,7 +120,7 @@ blockchain-pipeline/
 │   ├── profiles.yml
 │   ├── packages.yml
 │   ├── macros/              # Пользовательские макросы
-│   └── models/              # DBT модели (staging, intermediate, marts)
+│   └── models/              # DBT модели (staging, ods, intermediate, marts)
 ├── dwh/
 │   └── 01_init.sql          # Инициализация PostgreSQL
 ├── docker-compose.yml       # Оркестрация контейнеров
@@ -190,6 +191,7 @@ curl http://localhost:8000/stats
 
 Проект включает dbt для трансформации данных:
 - **Staging модели**: Очистка и стандартизация сырых данных
+- **ODS слой**: Валидированные таблицы с оконными метриками (`ods_wallets`, `ods_transactions`)
 - **Intermediate модели**: Промежуточные агрегации
 - **Marts модели**: Финальные таблицы для аналитики
 
@@ -202,13 +204,20 @@ curl http://localhost:8000/stats
 ### Оконные функции
 
 ```sql
--- Кумулятивная сумма и скользящее среднее
+-- ODS: накопительный объём и предыдущий timestamp по каждому кошельку
 SELECT
     wallet_address,
-    value_eth,
-    SUM(value_eth) OVER (PARTITION BY wallet_address ORDER BY timestamp) AS cumulative_eth,
-    AVG(value_eth) OVER (PARTITION BY wallet_address ROWS BETWEEN 9 PRECEDING AND CURRENT ROW) AS ma_10
-FROM transactions;
+    transaction_timestamp,
+    SUM(value_eth) OVER (
+        PARTITION BY wallet_address
+        ORDER BY transaction_timestamp
+        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+    ) AS cumulative_volume_eth,
+    LAG(transaction_timestamp) OVER (
+        PARTITION BY wallet_address
+        ORDER BY transaction_timestamp
+    ) AS prev_tx_timestamp
+FROM ods_transactions;
 ```
 
 ### Аналитика

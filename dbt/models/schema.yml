@@ -22,6 +22,8 @@ models:
     data_tests:
       - elementary.freshness_anomalies:
           timestamp_column: transaction_timestamp
+      - elementary.event_freshness_anomalies:
+          event_timestamp_column: transaction_timestamp
     columns:
       - name: transaction_id
         description: "Primary key"
@@ -109,3 +111,48 @@ models:
         data_tests:
           - unique
           - not_null
+
+  # ODS layer
+  - name: ods_wallets
+    description: "ODS layer for wallets enriched with validation and metadata"
+    columns:
+      - name: wallet_id
+        description: "Wallet identifier from raw"
+        data_tests:
+          - unique
+          - not_null
+      - name: wallet_address
+        description: "Validated wallet address"
+        data_tests:
+          - not_null
+          - unique
+      - name: added_at
+        description: "Original inserted timestamp"
+      - name: last_updated
+        description: "Last update timestamp"
+
+  - name: ods_transactions
+    description: "ODS layer for transactions with window metrics"
+    data_tests:
+      - elementary.volume_anomalies
+    columns:
+      - name: transaction_id
+        description: "Primary key from raw"
+        data_tests:
+          - unique
+          - not_null
+      - name: transaction_hash
+        description: "Hash of transaction"
+        data_tests:
+          - unique
+          - not_null
+      - name: transaction_timestamp
+        description: "Timestamp of transaction"
+        data_tests:
+          - not_null
+      - name: wallet_address
+        description: "Primary wallet address attached to tx"
+      - name: cumulative_volume_eth
+        description: "Windowed cumulative volume by wallet"
+        data_tests:
+          - elementary.column_anomalies

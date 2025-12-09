@@ -25,7 +25,7 @@ jobs:
 
       - name: Install linters
         run: |
-          pip install black isort flake8 sqlfluff
+          pip install black isort flake8 sqlfluff sqlfluff-templater-dbt
 
       - name: Check Python formatting (black)
         run: black --check --line-length=100 app/ airflow/
@@ -37,7 +37,7 @@ jobs:
         run: flake8 --max-line-length=100 --ignore=E501,W503 app/ airflow/
 
       - name: Lint SQL (sqlfluff)
-        run: sqlfluff lint dwh/ --dialect postgres || true
+        run: sqlfluff lint dwh/ dbt/models/ --dialect postgres
 
   # ==============================================================================
   # Deploy - Автоматический деплой на сервер
@@ -45,7 +45,7 @@ jobs:
   deploy:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: lint
+    needs: [lint, dbt]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
 
     steps:
@@ -62,3 +62,75 @@ jobs:
             docker compose up -d --build
             docker compose ps
             echo "✅ Deployment completed successfully!"
+
+  # ==============================================================================
+  # DBT & Elementary - Build, Test, Report
+  # ==============================================================================
+  dbt:
+    name: DBT Build & Tests
+    runs-on: ubuntu-latest
+    needs: lint
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: blockchain
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: blockchain
+      POSTGRES_SCHEMA: public
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install clients
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Install dbt and elementary
+        run: |
+          pip install "dbt-postgres>=1.7" "elementary-data[postgres]>=0.21"
+
+      - name: Init database schema
+        run: psql -h $POSTGRES_HOST -U $POSTGRES_USER -d $POSTGRES_DB -f dwh/01_init.sql
+        env:
+          PGPASSWORD: ${{ env.POSTGRES_PASSWORD }}
+
+      - name: dbt deps
+        run: dbt deps --project-dir dbt --profiles-dir dbt
+
+      - name: dbt run
+        run: dbt run --project-dir dbt --profiles-dir dbt --target prod
+
+      - name: dbt test
+        run: dbt test --project-dir dbt --profiles-dir dbt --target prod
+
+      - name: Elementary EDR report
+        run: |
+          mkdir -p edr_report
+          edr report --project-dir dbt --profiles-dir dbt --target prod --reports-dir edr_report
+
+      - name: Upload EDR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: edr-report
+          path: edr_report

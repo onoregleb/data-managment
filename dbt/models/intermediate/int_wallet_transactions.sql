@@ -9,11 +9,11 @@
 -- {{ model_description }}
 
 with wallets as (
-    select * from {{ ref('stg_wallets') }}
+    select * from {{ ref('ods_wallets') }}
 ),
 
 transactions as (
-    select * from {{ ref('stg_transactions') }}
+    select * from {{ ref('ods_transactions') }}
 ),
 
 wallet_transactions as (

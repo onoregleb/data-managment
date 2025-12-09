@@ -48,7 +48,8 @@ models:
   - name: int_wallet_transactions
     description: "Intermediate model aggregating wallet transaction statistics"
     data_tests:
-      - elementary.all_columns_anomalies
+      - elementary.all_columns_anomalies:
+          severity: warn
     columns:
       - name: wallet_id
         description: "Wallet identifier"

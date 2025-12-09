@@ -28,6 +28,7 @@ POSTGRES_USER = os.getenv("POSTGRES_USER", "postgres")
 POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "postgres")
 POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5432")
 POSTGRES_DB = os.getenv("POSTGRES_DB", "blockchain")
+POSTGRES_EDR_SCHEMA = os.getenv("POSTGRES_EDR_SCHEMA", "public_edr")
 
 # Set environment variables for dbt
 dbt_env = {
@@ -38,6 +39,7 @@ dbt_env = {
     "POSTGRES_PASSWORD": POSTGRES_PASSWORD,
     "POSTGRES_PORT": POSTGRES_PORT,
     "POSTGRES_DB": POSTGRES_DB,
+    "POSTGRES_EDR_SCHEMA": POSTGRES_EDR_SCHEMA,
 }
 
 with DAG(

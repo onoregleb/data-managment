@@ -12,6 +12,13 @@ x-airflow-common: &airflow-common
     # Connections
     MONGO_URI: mongodb://mongo:mongo@mongodb:27017/
     POSTGRES_URI: postgresql://postgres:postgres@postgres-dw:5432/blockchain
+    # DBT / Elementary connection details (used inside DAG env)
+    POSTGRES_HOST: ${POSTGRES_HOST:-postgres-dw}
+    POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+    POSTGRES_USER: ${POSTGRES_USER:-postgres}
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    POSTGRES_DB: ${POSTGRES_DB:-blockchain}
+    POSTGRES_EDR_SCHEMA: ${POSTGRES_EDR_SCHEMA:-public_edr}
     ETHERSCAN_API_KEY: ${ETHERSCAN_API_KEY:-YourApiKeyToken}
     _PIP_ADDITIONAL_REQUIREMENTS: 'pymongo psycopg2-binary httpx dbt-core dbt-postgres elementary-data[postgres]'
   volumes:

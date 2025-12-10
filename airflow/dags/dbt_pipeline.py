@@ -75,8 +75,7 @@ with DAG(
             "PGPASSWORD=$POSTGRES_PASSWORD psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DB "
             '-c "DROP VIEW IF EXISTS public_ods.ods_transactions CASCADE; '
             "DROP VIEW IF EXISTS public_ods.ods_wallets CASCADE; "
-            "DROP TABLE IF EXISTS public_edr.anomaly_threshold_sensitivity CASCADE; "
-            'DROP TABLE IF EXISTS public_edr.alerts_dbt_models CASCADE;" && '
+            "DO \\$\\$ DECLARE obj RECORD; BEGIN FOR obj IN (SELECT schemaname, tablename as name, 'table' as type FROM pg_tables WHERE schemaname = 'public_edr' AND tablename IN ('anomaly_threshold_sensitivity', 'alerts_dbt_models') UNION ALL SELECT schemaname, viewname as name, 'view' as type FROM pg_views WHERE schemaname = 'public_edr' AND viewname IN ('anomaly_threshold_sensitivity', 'alerts_dbt_models')) LOOP IF obj.type = 'table' THEN EXECUTE format('DROP TABLE IF EXISTS %I.%I CASCADE', obj.schemaname, obj.name); ELSE EXECUTE format('DROP VIEW IF EXISTS %I.%I CASCADE', obj.schemaname, obj.name); END IF; END LOOP; END \\$\\$;\" && "
             "cd /home/airflow/.local/lib/python3.8/site-packages/elementary/monitor/dbt_project && "
             "dbt run --profiles-dir /opt/airflow/dbt --target prod --full-refresh"
         ),

@@ -71,6 +71,12 @@ with DAG(
             "FOR r IN (SELECT schemaname, tablename FROM pg_tables WHERE tablename LIKE '%__dbt_backup') LOOP "
             "EXECUTE format('DROP TABLE IF EXISTS %I.%I CASCADE', r.schemaname, r.tablename); "
             'END LOOP; END \\$\\$;" && '
+            # Дропаем проблемные relation, если остались от прошлых неудачных запусков
+            "PGPASSWORD=$POSTGRES_PASSWORD psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DB "
+            '-c "DROP TABLE IF EXISTS public_ods.ods_transactions CASCADE; '
+            "DROP TABLE IF EXISTS public_ods.ods_wallets CASCADE; "
+            "DROP TABLE IF EXISTS public_edr.anomaly_threshold_sensitivity CASCADE; "
+            'DROP TABLE IF EXISTS public_edr.alerts_dbt_models CASCADE;" && '
             "cd /home/airflow/.local/lib/python3.8/site-packages/elementary/monitor/dbt_project && "
             "dbt run --profiles-dir /opt/airflow/dbt --target prod --full-refresh"
         ),

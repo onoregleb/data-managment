@@ -24,6 +24,7 @@ models:
           timestamp_column: transaction_timestamp
       - elementary.event_freshness_anomalies:
           event_timestamp_column: transaction_timestamp
+          severity: warn
     columns:
       - name: transaction_id
         description: "Primary key"

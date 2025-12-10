@@ -263,6 +263,9 @@ def extract_from_mongodb(**context):
     Инкрементальное извлечение данных из MongoDB.
     Извлекает только новые записи с момента последней синхронизации.
     """
+    from decimal import Decimal
+
+    from bson.decimal128 import Decimal128
     from pymongo import MongoClient
 
     mongo_uri = os.getenv("MONGO_URI", "mongodb://mongo:mongo@mongodb:27017/")
@@ -294,10 +297,20 @@ def extract_from_mongodb(**context):
         if "last_updated" in w and hasattr(w["last_updated"], "isoformat"):
             w["last_updated"] = w["last_updated"].isoformat()
 
+    def sanitize(val):
+        if isinstance(val, Decimal128):
+            return float(val.to_decimal())
+        if isinstance(val, Decimal):
+            return float(val)
+        return val
+
     # Извлекаем только новые транзакции
     transactions = list(db.transactions.find(tx_filter))
     for tx in transactions:
         tx["_id"] = str(tx["_id"])
+        tx["value_wei"] = sanitize(tx.get("value_wei"))
+        tx["value_eth"] = sanitize(tx.get("value_eth"))
+        tx["gas_price"] = sanitize(tx.get("gas_price"))
         if "value_raw" in tx:
             tx["value_raw"] = str(tx["value_raw"])
         if "timestamp" in tx and hasattr(tx["timestamp"], "isoformat"):

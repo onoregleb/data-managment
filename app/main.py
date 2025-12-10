@@ -12,8 +12,10 @@ FastAPI сервис для сбора данных о кошельках Ethere
 
 import os
 from datetime import datetime
+from decimal import Decimal
 
 import httpx
+from bson.decimal128 import Decimal128
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from pymongo import MongoClient
@@ -248,6 +250,10 @@ async def fetch_wallet_data(address: str):
             transactions = data.get("result", [])
             saved_count = 0
 
+            def to_decimal128(val: str) -> Decimal128:
+                # MongoDB ограничен 8-байтовыми int, поэтому храним большие числа как Decimal128
+                return Decimal128(Decimal(val))
+
             for tx in transactions:
                 # Трансформация данных из Etherscan формата
                 # value в wei конвертируем в ETH (1 ETH = 10^18 wei)
@@ -256,10 +262,10 @@ async def fetch_wallet_data(address: str):
                     "wallet_address": address,
                     "from_address": tx["from"].lower(),
                     "to_address": tx["to"].lower() if tx["to"] else None,
-                    "value_wei": int(tx["value"]),
-                    "value_eth": int(tx["value"]) / 1e18,
+                    "value_wei": to_decimal128(tx["value"]),
+                    "value_eth": Decimal(tx["value"]) / Decimal(1e18),
                     "gas_used": int(tx["gasUsed"]),
-                    "gas_price": int(tx["gasPrice"]),
+                    "gas_price": to_decimal128(tx["gasPrice"]),
                     "timestamp": datetime.fromtimestamp(int(tx["timeStamp"])),
                     "block_number": int(tx["blockNumber"]),
                     "is_error": tx["isError"] == "1",

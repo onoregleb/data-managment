@@ -251,19 +251,21 @@ async def fetch_wallet_data(address: str):
             saved_count = 0
 
             def to_decimal128(val: str) -> Decimal128:
-                # MongoDB ограничен 8-байтовыми int, поэтому храним большие числа как Decimal128
-                return Decimal128(Decimal(val))
+                # MongoDB ограничен 8-байтовыми int, поэтому храним большие числа как Decimal128 (через строку)
+                return Decimal128(str(Decimal(val)))
 
             for tx in transactions:
                 # Трансформация данных из Etherscan формата
                 # value в wei конвертируем в ETH (1 ETH = 10^18 wei)
+                value_eth_dec = Decimal(tx["value"]) / Decimal(1e18)
+
                 tx_data = {
                     "hash": tx["hash"],
                     "wallet_address": address,
                     "from_address": tx["from"].lower(),
                     "to_address": tx["to"].lower() if tx["to"] else None,
                     "value_wei": to_decimal128(tx["value"]),
-                    "value_eth": Decimal(tx["value"]) / Decimal(1e18),
+                    "value_eth": Decimal128(str(value_eth_dec)),
                     "gas_used": int(tx["gasUsed"]),
                     "gas_price": to_decimal128(tx["gasPrice"]),
                     "timestamp": datetime.fromtimestamp(int(tx["timeStamp"])),

@@ -66,7 +66,7 @@ with DAG(
             "export PATH=$PATH:/home/airflow/.local/bin && "
             "export PYTHONPATH=$PYTHONPATH:/home/airflow/.local/lib/python3.8/site-packages && "
             # Чистим зависшие __dbt_backup перед запуском Elementary
-            "psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DB "
+            "PGPASSWORD=$POSTGRES_PASSWORD psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DB "
             '-c "DO $$ DECLARE r record; BEGIN '
             "FOR r IN (SELECT schemaname, tablename FROM pg_tables WHERE tablename LIKE '%__dbt_backup') LOOP "
             "EXECUTE format('DROP TABLE IF EXISTS %I.%I CASCADE', r.schemaname, r.tablename); "

@@ -15,7 +15,7 @@ with source as (
 renamed as (
     select
         id as wallet_id,
-        address as wallet_address,
+        lower(address) as wallet_address,
         transaction_count,
         added_at,
         last_updated,

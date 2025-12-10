@@ -46,7 +46,7 @@ with DAG(
     "dbt_pipeline",
     default_args=default_args,
     description="DBT: Transform blockchain data in PostgreSQL DWH",
-    schedule_interval="@hourly",  # Запуск каждый час после загрузки данных
+    schedule_interval="*/25 * * * *",  # Запуск каждые 25 минут
     start_date=datetime(2024, 1, 1),
     catchup=False,
     tags=["dbt", "transform", "blockchain", "postgresql"],

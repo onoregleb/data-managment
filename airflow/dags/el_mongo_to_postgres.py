@@ -47,6 +47,9 @@ def extract_wallets(**context):
 
 def extract_transactions(**context):
     """Извлечение транзакций из MongoDB"""
+    from decimal import Decimal
+
+    from bson.decimal128 import Decimal128
     from pymongo import MongoClient
 
     mongo_uri = os.getenv("MONGO_URI", "mongodb://mongo:mongo@mongodb:27017/")
@@ -56,8 +59,19 @@ def extract_transactions(**context):
     transactions = list(db.transactions.find())
     print(f"Extracted {len(transactions)} transactions from MongoDB")
 
+    def sanitize(val):
+        if isinstance(val, Decimal128):
+            return float(val.to_decimal())
+        if isinstance(val, Decimal):
+            return float(val)
+        return val
+
     for tx in transactions:
         tx["_id"] = str(tx["_id"])
+        # Приводим все Decimal/Decimal128 к json-friendly float
+        tx["value_wei"] = sanitize(tx.get("value_wei"))
+        tx["value_eth"] = sanitize(tx.get("value_eth"))
+        tx["gas_price"] = sanitize(tx.get("gas_price"))
         if "timestamp" in tx:
             tx["timestamp"] = tx["timestamp"].isoformat()
         if "fetched_at" in tx:
@@ -244,7 +258,7 @@ with DAG(
     "el_mongo_to_postgres",
     default_args=default_args,
     description="EL: MongoDB → PostgreSQL (Blockchain Data)",
-    schedule_interval="@hourly",
+    schedule_interval="*/25 * * * *",
     start_date=datetime(2024, 1, 1),
     catchup=False,
     tags=["el", "blockchain", "mongodb", "postgresql"],

@@ -14,8 +14,8 @@ from airflow import DAG
 default_args = {
     "owner": "data-team",
     "depends_on_past": False,
-    "retries": 1,
-    "retry_delay": timedelta(minutes=2),
+    "retries": 3,
+    "retry_delay": timedelta(minutes=5),
 }
 
 # DBT project directory

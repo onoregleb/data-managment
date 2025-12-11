@@ -17,8 +17,8 @@ from airflow import DAG
 default_args = {
     "owner": "data-team",
     "depends_on_past": False,
-    "retries": 1,
-    "retry_delay": timedelta(minutes=2),
+    "retries": 3,
+    "retry_delay": timedelta(minutes=5),
 }
 
 
@@ -258,7 +258,7 @@ with DAG(
     "el_mongo_to_postgres",
     default_args=default_args,
     description="EL: MongoDB → PostgreSQL (Blockchain Data)",
-    schedule_interval="*/25 * * * *",
+    schedule_interval="*/30 * * * *",
     start_date=datetime(2024, 1, 1),
     catchup=False,
     tags=["el", "blockchain", "mongodb", "postgresql"],
@@ -293,6 +293,25 @@ with DAG(
     DBT_PROJECT_DIR = "/opt/airflow/dbt"
     DBT_PROFILES_DIR = "/opt/airflow/dbt"
 
+    # Очистка dbt backup таблиц перед запуском
+    dbt_cleanup = BashOperator(
+        task_id="dbt_cleanup",
+        bash_command=(
+            "PGPASSWORD=$POSTGRES_PASSWORD psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DB "
+            '-c "DO \\$\\$ DECLARE r record; BEGIN '
+            "FOR r IN (SELECT schemaname, tablename FROM pg_tables WHERE tablename LIKE '%__dbt_backup') LOOP "
+            "EXECUTE format('DROP TABLE IF EXISTS %I.%I CASCADE', r.schemaname, r.tablename); "
+            'END LOOP; END \\$\\$;"'
+        ),
+        env={
+            "POSTGRES_HOST": os.getenv("POSTGRES_HOST", "postgres-dw"),
+            "POSTGRES_USER": os.getenv("POSTGRES_USER", "postgres"),
+            "POSTGRES_PASSWORD": os.getenv("POSTGRES_PASSWORD", "postgres"),
+            "POSTGRES_PORT": os.getenv("POSTGRES_PORT", "5432"),
+            "POSTGRES_DB": os.getenv("POSTGRES_DB", "blockchain"),
+        },
+    )
+
     dbt_run = BashOperator(
         task_id="dbt_run",
         bash_command=f"export PATH=$PATH:/home/airflow/.local/bin && export PYTHONPATH=$PYTHONPATH:/home/airflow/.local/lib/python3.8/site-packages && cd {DBT_PROJECT_DIR} && dbt run --profiles-dir {DBT_PROFILES_DIR} --target prod",
@@ -321,12 +340,13 @@ with DAG(
         },
     )
 
-    # Pipeline: EL -> Stats -> DBT Run -> DBT Test
+    # Pipeline: EL -> Stats -> DBT Cleanup -> DBT Run -> DBT Test
     (
         [extract_wallets_task, extract_transactions_task]
         >> load_wallets_task
         >> load_transactions_task
         >> stats_task
+        >> dbt_cleanup
         >> dbt_run
         >> dbt_test
     )

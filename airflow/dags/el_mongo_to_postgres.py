@@ -300,7 +300,7 @@ with DAG(
     dbt_cleanup = BashOperator(
         task_id="dbt_cleanup",
         bash_command=(
-            f'flock -w 1800 {DBT_LOCK_FILE} bash -lc "'
+            f'flock -w 1800 {DBT_LOCK_FILE} bash -c "'
             "PGPASSWORD=\\$POSTGRES_PASSWORD psql -h \\$POSTGRES_HOST -p \\$POSTGRES_PORT -U \\$POSTGRES_USER -d \\$POSTGRES_DB "
             '-c \\"DO \\\\\\$\\\\\\$ DECLARE r record; BEGIN '
             "FOR r IN ("
@@ -334,7 +334,7 @@ with DAG(
         bash_command=(
             "export PATH=$PATH:/home/airflow/.local/bin && "
             "export PYTHONPATH=$PYTHONPATH:/home/airflow/.local/lib/python3.11/site-packages && "
-            f"flock -w 1800 {DBT_LOCK_FILE} bash -lc "
+            f"flock -w 1800 {DBT_LOCK_FILE} bash -c "
             f'"cd {DBT_PROJECT_DIR} && dbt run --profiles-dir {DBT_PROFILES_DIR} --target prod"'
         ),
         env={
@@ -353,7 +353,7 @@ with DAG(
         bash_command=(
             "export PATH=$PATH:/home/airflow/.local/bin && "
             "export PYTHONPATH=$PYTHONPATH:/home/airflow/.local/lib/python3.11/site-packages && "
-            f"flock -w 1800 {DBT_LOCK_FILE} bash -lc "
+            f"flock -w 1800 {DBT_LOCK_FILE} bash -c "
             f'"cd {DBT_PROJECT_DIR} && dbt test --profiles-dir {DBT_PROFILES_DIR} --target prod"'
         ),
         env={

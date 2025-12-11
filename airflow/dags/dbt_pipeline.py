@@ -62,7 +62,7 @@ with DAG(
         bash_command=(
             f"export PATH=$PATH:/home/airflow/.local/bin && "
             f"export PYTHONPATH=$PYTHONPATH:/home/airflow/.local/lib/python3.11/site-packages && "
-            f"flock -w 1800 {DBT_LOCK_FILE} bash -lc "
+            f"flock -w 1800 {DBT_LOCK_FILE} bash -c "
             f'"cd {DBT_PROJECT_DIR} && dbt deps --profiles-dir {DBT_PROFILES_DIR}"'
         ),
         env=dbt_env,
@@ -75,7 +75,7 @@ with DAG(
             "export PATH=$PATH:/home/airflow/.local/bin && "
             "export PYTHONPATH=$PYTHONPATH:/home/airflow/.local/lib/python3.11/site-packages && "
             # Serialize cleanup + Elementary run to avoid concurrent dbt runs across DAGs.
-            f'flock -w 1800 {DBT_LOCK_FILE} bash -lc "'
+            f'flock -w 1800 {DBT_LOCK_FILE} bash -c "'
             # Чистим зависшие __dbt_backup (и таблицы, и view/materialized view), плюс проблемные relation
             "PGPASSWORD=\\$POSTGRES_PASSWORD psql -h \\$POSTGRES_HOST -p \\$POSTGRES_PORT -U \\$POSTGRES_USER -d \\$POSTGRES_DB "
             '-c \\"DO \\\\\\$\\\\\\$ DECLARE r record; BEGIN '
@@ -112,7 +112,7 @@ with DAG(
         bash_command=(
             f"export PATH=$PATH:/home/airflow/.local/bin && "
             f"export PYTHONPATH=$PYTHONPATH:/home/airflow/.local/lib/python3.11/site-packages && "
-            f"flock -w 1800 {DBT_LOCK_FILE} bash -lc "
+            f"flock -w 1800 {DBT_LOCK_FILE} bash -c "
             f'"cd {DBT_PROJECT_DIR} && dbt run --profiles-dir {DBT_PROFILES_DIR} --target prod"'
         ),
         env=dbt_env,
@@ -124,7 +124,7 @@ with DAG(
         bash_command=(
             f"export PATH=$PATH:/home/airflow/.local/bin && "
             f"export PYTHONPATH=$PYTHONPATH:/home/airflow/.local/lib/python3.11/site-packages && "
-            f"flock -w 1800 {DBT_LOCK_FILE} bash -lc "
+            f"flock -w 1800 {DBT_LOCK_FILE} bash -c "
             f'"cd {DBT_PROJECT_DIR} && dbt test --profiles-dir {DBT_PROFILES_DIR} --target prod"'
         ),
         env=dbt_env,
@@ -135,7 +135,7 @@ with DAG(
         bash_command=(
             f"export PATH=$PATH:/home/airflow/.local/bin && "
             f"export PYTHONPATH=$PYTHONPATH:/home/airflow/.local/lib/python3.11/site-packages && "
-            f"flock -w 1800 {DBT_LOCK_FILE} bash -lc "
+            f"flock -w 1800 {DBT_LOCK_FILE} bash -c "
             f'"cd {DBT_PROJECT_DIR} && mkdir -p edr_reports && '
             f"edr report --project-dir {DBT_PROJECT_DIR} --profiles-dir {DBT_PROFILES_DIR} "
             f'--profile-target prod --target-path edr_reports"'

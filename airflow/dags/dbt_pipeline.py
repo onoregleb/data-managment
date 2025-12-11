@@ -71,7 +71,6 @@ with DAG(
             "export PYTHONPATH=$PYTHONPATH:/home/airflow/.local/lib/python3.11/site-packages && "
             # Чистим зависшие __dbt_backup перед запуском Elementary + сносим оставшиеся relation
             "PGPASSWORD=$POSTGRES_PASSWORD psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DB "
-            "-v edr_schema=$POSTGRES_EDR_SCHEMA "
             '-c "DO \\$\\$ DECLARE r record; obj record; BEGIN '
             "FOR r IN (SELECT schemaname, tablename FROM pg_tables WHERE tablename LIKE '%__dbt_backup') LOOP "
             "  EXECUTE format('DROP TABLE IF EXISTS %I.%I CASCADE', r.schemaname, r.tablename); "
@@ -81,7 +80,7 @@ with DAG(
             "  FROM pg_catalog.pg_class c "
             "  JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace "
             "  WHERE (n.nspname = 'ods' AND c.relname IN ('ods_transactions','ods_wallets')) "
-            "     OR (n.nspname = :'edr_schema' AND c.relname IN ('elementary_test_results','schema_columns_snapshot','metadata','metrics_anomaly_score','monitors_runs','job_run_results','anomaly_threshold_sensitivity','alerts_dbt_models'))"
+            "     OR (n.nspname = '${POSTGRES_EDR_SCHEMA}' AND c.relname IN ('elementary_test_results','schema_columns_snapshot','metadata','metrics_anomaly_score','monitors_runs','job_run_results','anomaly_threshold_sensitivity','alerts_dbt_models'))"
             ") LOOP "
             "  IF obj.relkind IN ('v','m') THEN "
             "    EXECUTE format('DROP VIEW IF EXISTS %I.%I CASCADE', obj.schemaname, obj.name); "

@@ -20,7 +20,7 @@ x-airflow-common: &airflow-common
     POSTGRES_DB: ${POSTGRES_DB:-blockchain}
     POSTGRES_EDR_SCHEMA: ${POSTGRES_EDR_SCHEMA:-public_edr}
     ETHERSCAN_API_KEY: ${ETHERSCAN_API_KEY:-YourApiKeyToken}
-    _PIP_ADDITIONAL_REQUIREMENTS: 'pymongo psycopg2-binary httpx dbt-core dbt-postgres elementary-data[postgres]'
+    _PIP_ADDITIONAL_REQUIREMENTS: 'pymongo==4.6.1 psycopg2-binary==2.9.9 httpx==0.24.1 dbt-core==1.5.9 dbt-postgres==1.5.9 elementary-data[postgres]==0.21.0'
   volumes:
     - ./airflow/dags:/opt/airflow/dags
     - ./airflow/logs:/opt/airflow/logs

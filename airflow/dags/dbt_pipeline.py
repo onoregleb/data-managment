@@ -42,6 +42,10 @@ dbt_env = {
     "POSTGRES_EDR_SCHEMA": POSTGRES_EDR_SCHEMA,
 }
 
+# Serialize dbt runs across DAGs (LocalExecutor may run tasks concurrently).
+# All dbt-related tasks will acquire this file lock inside the Airflow container.
+DBT_LOCK_FILE = os.getenv("DBT_LOCK_FILE", "/tmp/dbt_global.lock")
+
 with DAG(
     "dbt_pipeline",
     default_args=default_args,
@@ -58,7 +62,8 @@ with DAG(
         bash_command=(
             f"export PATH=$PATH:/home/airflow/.local/bin && "
             f"export PYTHONPATH=$PYTHONPATH:/home/airflow/.local/lib/python3.11/site-packages && "
-            f"cd {DBT_PROJECT_DIR} && dbt deps --profiles-dir {DBT_PROFILES_DIR}"
+            f"flock -w 1800 {DBT_LOCK_FILE} bash -lc "
+            f'"cd {DBT_PROJECT_DIR} && dbt deps --profiles-dir {DBT_PROFILES_DIR}"'
         ),
         env=dbt_env,
     )
@@ -69,28 +74,34 @@ with DAG(
         bash_command=(
             "export PATH=$PATH:/home/airflow/.local/bin && "
             "export PYTHONPATH=$PYTHONPATH:/home/airflow/.local/lib/python3.11/site-packages && "
-            # Чистим зависшие __dbt_backup перед запуском Elementary + сносим оставшиеся relation
-            "PGPASSWORD=$POSTGRES_PASSWORD psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DB "
-            '-c "DO \\$\\$ DECLARE r record; obj record; BEGIN '
-            "FOR r IN (SELECT schemaname, tablename FROM pg_tables WHERE tablename LIKE '%__dbt_backup') LOOP "
-            "  EXECUTE format('DROP TABLE IF EXISTS %I.%I CASCADE', r.schemaname, r.tablename); "
-            "END LOOP; "
-            "FOR obj IN ("
+            # Serialize cleanup + Elementary run to avoid concurrent dbt runs across DAGs.
+            f'flock -w 1800 {DBT_LOCK_FILE} bash -lc "'
+            # Чистим зависшие __dbt_backup (и таблицы, и view/materialized view), плюс проблемные relation
+            "PGPASSWORD=\\$POSTGRES_PASSWORD psql -h \\$POSTGRES_HOST -p \\$POSTGRES_PORT -U \\$POSTGRES_USER -d \\$POSTGRES_DB "
+            '-c \\"DO \\\\\\$\\\\\\$ DECLARE r record; BEGIN '
+            "FOR r IN ("
             "  SELECT n.nspname AS schemaname, c.relname AS name, c.relkind "
             "  FROM pg_catalog.pg_class c "
             "  JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace "
-            "  WHERE (n.nspname = 'ods' AND c.relname IN ('ods_transactions','ods_wallets')) "
-            "     OR (n.nspname = '${POSTGRES_EDR_SCHEMA}' AND c.relname IN ('elementary_test_results','schema_columns_snapshot','metadata','metrics_anomaly_score','monitors_runs','job_run_results','anomaly_threshold_sensitivity','alerts_dbt_models'))"
+            "  WHERE c.relname LIKE '%__dbt_backup' "
+            "     OR (n.nspname IN ('public_ods','ods') AND c.relname IN ('ods_transactions','ods_wallets')) "
+            "     OR (n.nspname IN ('\\$POSTGRES_EDR_SCHEMA','public_edr') AND c.relname IN ("
+            "       'elementary_test_results','schema_columns_snapshot','metadata','metrics_anomaly_score',"
+            "       'monitors_runs','job_run_results','anomaly_threshold_sensitivity','alerts_dbt_models'"
+            "     ))"
             ") LOOP "
-            "  IF obj.relkind IN ('v','m') THEN "
-            "    EXECUTE format('DROP VIEW IF EXISTS %I.%I CASCADE', obj.schemaname, obj.name); "
+            "  IF r.relkind = 'v' THEN "
+            "    EXECUTE format('DROP VIEW IF EXISTS %I.%I CASCADE', r.schemaname, r.name); "
+            "  ELSIF r.relkind = 'm' THEN "
+            "    EXECUTE format('DROP MATERIALIZED VIEW IF EXISTS %I.%I CASCADE', r.schemaname, r.name); "
             "  ELSE "
-            "    EXECUTE format('DROP TABLE IF EXISTS %I.%I CASCADE', obj.schemaname, obj.name); "
+            "    EXECUTE format('DROP TABLE IF EXISTS %I.%I CASCADE', r.schemaname, r.name); "
             "  END IF; "
             "END LOOP; "
-            'END \\$\\$;" && '
+            'END \\\\\\$\\\\\\$;\\" && '
             "cd /home/airflow/.local/lib/python3.11/site-packages/elementary/monitor/dbt_project && "
             "dbt run --profiles-dir /opt/airflow/dbt --target prod --full-refresh"
+            '"'
         ),
         env=dbt_env,
     )
@@ -101,7 +112,8 @@ with DAG(
         bash_command=(
             f"export PATH=$PATH:/home/airflow/.local/bin && "
             f"export PYTHONPATH=$PYTHONPATH:/home/airflow/.local/lib/python3.11/site-packages && "
-            f"cd {DBT_PROJECT_DIR} && dbt run --profiles-dir {DBT_PROFILES_DIR} --target prod"
+            f"flock -w 1800 {DBT_LOCK_FILE} bash -lc "
+            f'"cd {DBT_PROJECT_DIR} && dbt run --profiles-dir {DBT_PROFILES_DIR} --target prod"'
         ),
         env=dbt_env,
     )
@@ -112,7 +124,8 @@ with DAG(
         bash_command=(
             f"export PATH=$PATH:/home/airflow/.local/bin && "
             f"export PYTHONPATH=$PYTHONPATH:/home/airflow/.local/lib/python3.11/site-packages && "
-            f"cd {DBT_PROJECT_DIR} && dbt test --profiles-dir {DBT_PROFILES_DIR} --target prod"
+            f"flock -w 1800 {DBT_LOCK_FILE} bash -lc "
+            f'"cd {DBT_PROJECT_DIR} && dbt test --profiles-dir {DBT_PROFILES_DIR} --target prod"'
         ),
         env=dbt_env,
     )
@@ -122,9 +135,10 @@ with DAG(
         bash_command=(
             f"export PATH=$PATH:/home/airflow/.local/bin && "
             f"export PYTHONPATH=$PYTHONPATH:/home/airflow/.local/lib/python3.11/site-packages && "
-            f"cd {DBT_PROJECT_DIR} && "
-            f"mkdir -p edr_reports && "
-            f"edr report --project-dir {DBT_PROJECT_DIR} --profiles-dir {DBT_PROFILES_DIR} --profile-target prod --target-path edr_reports"
+            f"flock -w 1800 {DBT_LOCK_FILE} bash -lc "
+            f'"cd {DBT_PROJECT_DIR} && mkdir -p edr_reports && '
+            f"edr report --project-dir {DBT_PROJECT_DIR} --profiles-dir {DBT_PROFILES_DIR} "
+            f'--profile-target prod --target-path edr_reports"'
         ),
         env=dbt_env,
     )

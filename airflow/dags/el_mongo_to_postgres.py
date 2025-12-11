@@ -21,6 +21,9 @@ default_args = {
     "retry_delay": timedelta(minutes=5),
 }
 
+# Serialize dbt runs across DAGs (LocalExecutor may run tasks concurrently).
+DBT_LOCK_FILE = os.getenv("DBT_LOCK_FILE", "/tmp/dbt_global.lock")
+
 
 def extract_wallets(**context):
     """Извлечение кошельков из MongoDB"""
@@ -297,11 +300,25 @@ with DAG(
     dbt_cleanup = BashOperator(
         task_id="dbt_cleanup",
         bash_command=(
-            "PGPASSWORD=$POSTGRES_PASSWORD psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DB "
-            '-c "DO \\$\\$ DECLARE r record; BEGIN '
-            "FOR r IN (SELECT schemaname, tablename FROM pg_tables WHERE tablename LIKE '%__dbt_backup') LOOP "
-            "EXECUTE format('DROP TABLE IF EXISTS %I.%I CASCADE', r.schemaname, r.tablename); "
-            'END LOOP; END \\$\\$;"'
+            f'flock -w 1800 {DBT_LOCK_FILE} bash -lc "'
+            "PGPASSWORD=\\$POSTGRES_PASSWORD psql -h \\$POSTGRES_HOST -p \\$POSTGRES_PORT -U \\$POSTGRES_USER -d \\$POSTGRES_DB "
+            '-c \\"DO \\\\\\$\\\\\\$ DECLARE r record; BEGIN '
+            "FOR r IN ("
+            "  SELECT n.nspname AS schemaname, c.relname AS name, c.relkind "
+            "  FROM pg_catalog.pg_class c "
+            "  JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace "
+            "  WHERE c.relname LIKE '%__dbt_backup'"
+            ") LOOP "
+            "  IF r.relkind = 'v' THEN "
+            "    EXECUTE format('DROP VIEW IF EXISTS %I.%I CASCADE', r.schemaname, r.name); "
+            "  ELSIF r.relkind = 'm' THEN "
+            "    EXECUTE format('DROP MATERIALIZED VIEW IF EXISTS %I.%I CASCADE', r.schemaname, r.name); "
+            "  ELSE "
+            "    EXECUTE format('DROP TABLE IF EXISTS %I.%I CASCADE', r.schemaname, r.name); "
+            "  END IF; "
+            "END LOOP; "
+            'END \\\\\\$\\\\\\$;\\"'
+            '"'
         ),
         env={
             "POSTGRES_HOST": os.getenv("POSTGRES_HOST", "postgres-dw"),
@@ -314,7 +331,12 @@ with DAG(
 
     dbt_run = BashOperator(
         task_id="dbt_run",
-        bash_command=f"export PATH=$PATH:/home/airflow/.local/bin && export PYTHONPATH=$PYTHONPATH:/home/airflow/.local/lib/python3.11/site-packages && cd {DBT_PROJECT_DIR} && dbt run --profiles-dir {DBT_PROFILES_DIR} --target prod",
+        bash_command=(
+            "export PATH=$PATH:/home/airflow/.local/bin && "
+            "export PYTHONPATH=$PYTHONPATH:/home/airflow/.local/lib/python3.11/site-packages && "
+            f"flock -w 1800 {DBT_LOCK_FILE} bash -lc "
+            f'"cd {DBT_PROJECT_DIR} && dbt run --profiles-dir {DBT_PROFILES_DIR} --target prod"'
+        ),
         env={
             "DBT_PROJECT_DIR": DBT_PROJECT_DIR,
             "DBT_PROFILES_DIR": DBT_PROFILES_DIR,
@@ -328,7 +350,12 @@ with DAG(
 
     dbt_test = BashOperator(
         task_id="dbt_test",
-        bash_command=f"export PATH=$PATH:/home/airflow/.local/bin && export PYTHONPATH=$PYTHONPATH:/home/airflow/.local/lib/python3.11/site-packages && cd {DBT_PROJECT_DIR} && dbt test --profiles-dir {DBT_PROFILES_DIR} --target prod",
+        bash_command=(
+            "export PATH=$PATH:/home/airflow/.local/bin && "
+            "export PYTHONPATH=$PYTHONPATH:/home/airflow/.local/lib/python3.11/site-packages && "
+            f"flock -w 1800 {DBT_LOCK_FILE} bash -lc "
+            f'"cd {DBT_PROJECT_DIR} && dbt test --profiles-dir {DBT_PROFILES_DIR} --target prod"'
+        ),
         env={
             "DBT_PROJECT_DIR": DBT_PROJECT_DIR,
             "DBT_PROFILES_DIR": DBT_PROFILES_DIR,

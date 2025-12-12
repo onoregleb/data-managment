@@ -255,6 +255,18 @@ LIMIT 10;
 
 ---
 
+## Визуализация и отчётность (Jupyter)
+
+Визуализация и отчётность в ноутбуке:
+
+- `notebooks/bi_report.ipynb`
+
+Он подключается к PostgreSQL и строит графики по витринам DBT (схема `analytics`):
+- `daily_transaction_summary`
+- `fct_wallet_activity`
+- `dim_wallets`
+
+
 ## Ресурсы
 
 Таблица ниже соответствует лимитам контейнеров из `docker-compose.yml` (параметры `mem_limit` и `cpus`).

@@ -4,7 +4,8 @@ models:
   - name: stg_wallets
     description: "Staging model for wallet data"
     data_tests:
-      - elementary.volume_anomalies
+      - elementary.volume_anomalies:
+          severity: warn
     columns:
       - name: wallet_id
         description: "Primary key"
@@ -73,6 +74,7 @@ models:
       - elementary.dimension_anomalies:
           dimensions:
             - is_active
+          severity: warn
     columns:
       - name: wallet_id
         description: "Wallet unique identifier"

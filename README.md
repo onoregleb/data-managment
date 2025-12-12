@@ -14,7 +14,7 @@ ETL-пайплайн для сбора и анализа данных Ethereum �
 | **FastAPI** | http://213.171.31.111:8000/docs | - |
 | **PostgreSQL DWH** | 213.171.31.111:5433 | postgres / postgres |
 | **MongoDB** | 213.171.31.111:27017 | mongo / mongo |
-| **EDR Report (Elementary)** | http://213.171.31.11:8090/ | - |
+| **EDR Report (Elementary)** | http://213.171.31.111:8090/ | - |
 
 ---
 
@@ -45,13 +45,13 @@ MONGO_DB=blockchain_raw
 
 **Production:**
 ```bash
-MONGO_URI=mongodb://mongo:mongo@213.171.27.223:27017/
-MONGO_HOST=213.171.27.223
+MONGO_URI=mongodb://mongo:mongo@213.171.31.111:27017/
+MONGO_HOST=213.171.31.111
 MONGO_PORT=27017
 MONGO_INITDB_ROOT_USERNAME=mongo
 MONGO_INITDB_ROOT_PASSWORD=mongo
 MONGO_INITDB_DATABASE=blockchain_raw
-MONGO_URL=mongodb://mongo:mongo@213.171.27.223:27017/blockchain_raw
+MONGO_URL=mongodb://mongo:mongo@213.171.31.111:27017/blockchain_raw
 ```
 
 ### PostgreSQL
@@ -85,8 +85,8 @@ POSTGRES_DB=blockchain
 
 **Production:**
 ```bash
-POSTGRES_URI=postgresql://postgres:postgres@213.171.27.223:5433/blockchain
-POSTGRES_HOST=213.171.27.223
+POSTGRES_URI=postgresql://postgres:postgres@213.171.31.111:5433/blockchain
+POSTGRES_HOST=213.171.31.111
 POSTGRES_PORT=5433
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
@@ -94,7 +94,7 @@ POSTGRES_DB=blockchain
 ```
 
 **Подключение через DBeaver / pgAdmin:**
-- Host: `213.171.27.223`
+- Host: `213.171.31.111`
 - Port: `5433`
 - Database: `blockchain`
 - Username: `postgres`
@@ -152,22 +152,11 @@ docker compose up -d
 - **Автообновление**: каждый раз, когда в Airflow успешно проходит `edr_report`, Nginx сразу начинает
   отдавать обновлённую версию (кэш отключён заголовками в `edr_report_nginx.conf`)
 
-### Что сделать на сервере (1 раз)
-
-1. Убедиться, что сервис `edr-report` поднят:
-   - в `docker-compose.yml` он слушает порт `${EDR_REPORT_PORT:-8090}`
-2. Открыть порт в security group / firewall (если нужно): **8090/TCP**
-3. Перезапустить compose после деплоя изменений:
-   - `docker compose up -d --build`
 
 ### Ссылка для сдачи
 
-- **Elementary edr report URL**: `http://<SERVER_IP>:8090/`
+- **Elementary edr report URL**: `http://213.171.31.111:8090/`
 
-### Если видишь 404
-
-- Это нормально до первого успешного прогона `edr_report`. Запусти DAG `dbt_pipeline` в Airflow и дождись
-  завершения таска `edr_report` (он создаст `./dbt/edr_reports/index.html`).
 
 ## Data Pipeline
 
@@ -268,15 +257,21 @@ LIMIT 10;
 
 ## Ресурсы
 
-| Сервис | RAM | vCPU |
+Таблица ниже соответствует лимитам контейнеров из `docker-compose.yml` (параметры `mem_limit` и `cpus`).
+У тебя **8GB RAM**, поэтому по памяти есть запас (steady-state лимиты ~6.6GB + место под ОС/кэш).
+
+| Сервис | RAM limit | vCPU limit |
 |--------|-----|------|
-| MongoDB | 512 MB | 0.35 |
-| PostgreSQL DW | 384 MB | 0.25 |
-| PostgreSQL Airflow | 256 MB | 0.15 |
-| App (FastAPI) | 256 MB | 0.20 |
-| Airflow Webserver | 768 MB | 0.40 |
-| Airflow Scheduler | 768 MB | 0.50 |
-| Airflow Init | 384 MB | 0.15 |
-| **Итого** | **~3.3 GB** | **2.0** |
+| MongoDB | 1024 MB | 0.5 |
+| PostgreSQL DW | 2048 MB | 1.0 |
+| PostgreSQL Airflow | 512 MB | 0.5 |
+| App (FastAPI) | 512 MB | 0.5 |
+| Airflow Webserver | 1024 MB | 0.8 |
+| Airflow Scheduler | 1536 MB | 1.0 |
+| EDR Report (Nginx) | 128 MB | 0.2 |
+| **Итого (steady-state)** | **~6.6 GB** | **4.5** |
+
+`airflow-init` — одноразовый контейнер и в постоянной работе обычно не висит. Если учитывать его лимиты,
+то “пик” по лимитам: **~7.0 GB** и **4.65 vCPU**.
 
 ---

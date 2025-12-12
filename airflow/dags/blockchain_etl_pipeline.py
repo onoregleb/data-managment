@@ -22,7 +22,7 @@ default_args = {
 USDT_CONTRACT = "0xdac17f958d2ee523a2206206994597c13d831ec7"
 
 # Кошельки для мониторинга
-MONITORED_WALLETS = [
+MONITORED_WALLETS_FALLBACK = [
     "0xdfd5293d8e347dfe59e90efd55b2956a1343963d",  # Активный кошелек
     "0x28c6c06298d514db089934071355e5743bf21d60",  # Binance Hot Wallet
     "0x21a31ee1afc51d94c2efccaa2092ad1028285549",  # Binance
@@ -34,6 +34,40 @@ ETHERSCAN_BASE_URL = "https://api.etherscan.io/v2/api"
 CHAIN_ID = 1  # Ethereum Mainnet
 
 APP_BASE_URL = os.getenv("APP_BASE_URL", "http://app:8000")
+WALLETS_LIST_LIMIT = int(os.getenv("WALLETS_LIST_LIMIT", "1000"))
+WALLETS_FETCH_LIMIT = int(os.getenv("WALLETS_FETCH_LIMIT", "100"))
+
+
+def _normalize_eth_address(addr: str | None) -> str | None:
+    if not addr:
+        return None
+    a = addr.strip().lower()
+    if a.startswith("0x") and len(a) == 42:
+        return a
+    return None
+
+
+def get_monitored_wallets_from_api(http_client) -> list[str]:
+    """
+    Pull wallets from FastAPI storage (MongoDB behind the service).
+    This allows adding wallets via POST /wallets without editing the DAG.
+    """
+    resp = http_client.get(f"{APP_BASE_URL}/wallets", params={"limit": WALLETS_LIST_LIMIT})
+    resp.raise_for_status()
+    payload = resp.json()
+    wallets = payload.get("wallets", [])
+
+    addrs: list[str] = []
+    for w in wallets:
+        addr = _normalize_eth_address(w.get("address") if isinstance(w, dict) else None)
+        if addr:
+            addrs.append(addr)
+
+    # stable order + dedupe
+    uniq = sorted(set(addrs))
+    if WALLETS_FETCH_LIMIT > 0:
+        uniq = uniq[:WALLETS_FETCH_LIMIT]
+    return uniq
 
 
 def trigger_app_fetch(**context):
@@ -45,7 +79,13 @@ def trigger_app_fetch(**context):
 
     results = []
     with httpx.Client(timeout=60.0) as http_client:
-        for wallet in MONITORED_WALLETS:
+        try:
+            wallets = get_monitored_wallets_from_api(http_client)
+        except Exception as e:
+            print(f"⚠️ Failed to get wallets list from FastAPI, using fallback list. Error: {e}")
+            wallets = MONITORED_WALLETS_FALLBACK
+
+        for wallet in wallets:
             url = f"{APP_BASE_URL}/wallets/{wallet}/fetch"
             response = http_client.post(url)
             response.raise_for_status()
@@ -72,7 +112,7 @@ def fetch_token_transfers(**context):
     wallets_collection = db["wallets"]
     transactions_collection = db["transactions"]
 
-    print(f"Fetching blockchain data for {len(MONITORED_WALLETS)} wallets")
+    print(f"Fetching blockchain data for {len(MONITORED_WALLETS_FALLBACK)} wallets")
     print(f"Using Etherscan API Key: {ETHERSCAN_API_KEY[:10]}...")
 
     total_transactions = 0
@@ -80,7 +120,7 @@ def fetch_token_transfers(**context):
 
     try:
         with httpx.Client(timeout=60.0) as http_client:
-            for wallet_address in MONITORED_WALLETS:
+            for wallet_address in MONITORED_WALLETS_FALLBACK:
                 print(f"\nProcessing wallet: {wallet_address}")
 
                 # 1. Получаем обычные ETH транзакции (API V2)

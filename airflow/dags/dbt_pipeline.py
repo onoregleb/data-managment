@@ -138,20 +138,24 @@ with DAG(
         bash_command=(
             f"export PATH=$PATH:/home/airflow/.local/bin && "
             f"export PYTHONPATH=$PYTHONPATH:/home/airflow/.local/lib/python3.11/site-packages && "
-            f"flock -w 1800 {DBT_LOCK_FILE} bash -c "
-            f'"cd {DBT_PROJECT_DIR} && mkdir -p {EDR_REPORT_DIR} && '
-            f"edr report --project-dir {DBT_PROJECT_DIR} --profiles-dir {DBT_PROFILES_DIR} "
-            f"--profile-target prod --target-path {EDR_REPORT_DIR} && "
+            # Use single-quoted script for bash to prevent the *outer* shell from expanding "$INDEX"/"$HTML".
+            f"flock -w 1800 {DBT_LOCK_FILE} bash -lc '"
+            f"set -euo pipefail; "
+            f'cd "{DBT_PROJECT_DIR}"; '
+            f'mkdir -p "{EDR_REPORT_DIR}"; '
+            f'edr report --project-dir "{DBT_PROJECT_DIR}" --profiles-dir "{DBT_PROFILES_DIR}" '
+            f'--profile-target prod --target-path "{EDR_REPORT_DIR}"; '
             # Some Elementary versions may not create index.html at the root of the target dir.
-            # To make static hosting stable, always ensure edr_reports/index.html exists.
-            f"if [ ! -f {EDR_REPORT_DIR}/index.html ]; then "
-            f'INDEX="$(find {EDR_REPORT_DIR} -maxdepth 5 -type f -name \\"index.html\\" | head -n 1)"; '
-            f'if [ -n "$INDEX" ]; then cp "$INDEX" {EDR_REPORT_DIR}/index.html; '
-            "else "
-            f'HTML="$(find {EDR_REPORT_DIR} -maxdepth 5 -type f -name \\"*.html\\" | head -n 1)"; '
-            f'if [ -n "$HTML" ]; then cp "$HTML" {EDR_REPORT_DIR}/index.html; fi; '
-            "fi; "
-            'fi"'
+            # To make static hosting stable, always ensure {EDR_REPORT_DIR}/index.html exists.
+            f'if [ ! -f "{EDR_REPORT_DIR}/index.html" ]; then '
+            f'INDEX="$(find "{EDR_REPORT_DIR}" -maxdepth 5 -type f -name index.html 2>/dev/null | head -n 1 || true)"; '
+            f'if [ -n "$INDEX" ]; then cp -f "$INDEX" "{EDR_REPORT_DIR}/index.html"; '
+            f"else "
+            f'HTML="$(find "{EDR_REPORT_DIR}" -maxdepth 5 -type f -name "*.html" 2>/dev/null | head -n 1 || true)"; '
+            f'if [ -n "$HTML" ]; then cp -f "$HTML" "{EDR_REPORT_DIR}/index.html"; fi; '
+            f"fi; "
+            f"fi"
+            f"'"
         ),
         env=dbt_env,
     )

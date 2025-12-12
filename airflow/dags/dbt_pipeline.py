@@ -139,7 +139,8 @@ with DAG(
             f"export PATH=$PATH:/home/airflow/.local/bin && "
             f"export PYTHONPATH=$PYTHONPATH:/home/airflow/.local/lib/python3.11/site-packages && "
             # Use single-quoted script for bash to prevent the *outer* shell from expanding "$INDEX"/"$HTML".
-            f"flock -w 1800 {DBT_LOCK_FILE} bash -lc '"
+            # IMPORTANT: do not use `bash -l` here (login shell), it may reset PATH and hide `edr`.
+            f"flock -w 1800 {DBT_LOCK_FILE} bash -c '"
             f"set -euo pipefail; "
             f'cd "{DBT_PROJECT_DIR}"; '
             f'mkdir -p "{EDR_REPORT_DIR}"; '

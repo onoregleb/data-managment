@@ -22,6 +22,9 @@ default_args = {
 DBT_PROJECT_DIR = "/opt/airflow/dbt"
 DBT_PROFILES_DIR = "/opt/airflow/dbt"
 
+# Where to store the generated Elementary report (shared with nginx via docker volume)
+EDR_REPORT_DIR = os.getenv("EDR_REPORT_DIR", "/opt/airflow/edr_reports")
+
 # PostgreSQL connection from environment
 POSTGRES_HOST = os.getenv("POSTGRES_HOST", "postgres-dw")
 POSTGRES_USER = os.getenv("POSTGRES_USER", "postgres")
@@ -136,17 +139,17 @@ with DAG(
             f"export PATH=$PATH:/home/airflow/.local/bin && "
             f"export PYTHONPATH=$PYTHONPATH:/home/airflow/.local/lib/python3.11/site-packages && "
             f"flock -w 1800 {DBT_LOCK_FILE} bash -c "
-            f'"cd {DBT_PROJECT_DIR} && mkdir -p edr_reports && '
+            f'"cd {DBT_PROJECT_DIR} && mkdir -p {EDR_REPORT_DIR} && '
             f"edr report --project-dir {DBT_PROJECT_DIR} --profiles-dir {DBT_PROFILES_DIR} "
-            f"--profile-target prod --target-path edr_reports && "
+            f"--profile-target prod --target-path {EDR_REPORT_DIR} && "
             # Some Elementary versions may not create index.html at the root of the target dir.
             # To make static hosting stable, always ensure edr_reports/index.html exists.
-            "if [ ! -f edr_reports/index.html ]; then "
-            'INDEX="$(find edr_reports -maxdepth 5 -type f -name \\"index.html\\" | head -n 1)"; '
-            'if [ -n "$INDEX" ]; then cp "$INDEX" edr_reports/index.html; '
+            f"if [ ! -f {EDR_REPORT_DIR}/index.html ]; then "
+            f'INDEX="$(find {EDR_REPORT_DIR} -maxdepth 5 -type f -name \\"index.html\\" | head -n 1)"; '
+            f'if [ -n "$INDEX" ]; then cp "$INDEX" {EDR_REPORT_DIR}/index.html; '
             "else "
-            'HTML="$(find edr_reports -maxdepth 5 -type f -name \\"*.html\\" | head -n 1)"; '
-            'if [ -n "$HTML" ]; then cp "$HTML" edr_reports/index.html; fi; '
+            f'HTML="$(find {EDR_REPORT_DIR} -maxdepth 5 -type f -name \\"*.html\\" | head -n 1)"; '
+            f'if [ -n "$HTML" ]; then cp "$HTML" {EDR_REPORT_DIR}/index.html; fi; '
             "fi; "
             'fi"'
         ),

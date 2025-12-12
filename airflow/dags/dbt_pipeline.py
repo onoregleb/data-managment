@@ -138,7 +138,17 @@ with DAG(
             f"flock -w 1800 {DBT_LOCK_FILE} bash -c "
             f'"cd {DBT_PROJECT_DIR} && mkdir -p edr_reports && '
             f"edr report --project-dir {DBT_PROJECT_DIR} --profiles-dir {DBT_PROFILES_DIR} "
-            f'--profile-target prod --target-path edr_reports"'
+            f"--profile-target prod --target-path edr_reports && "
+            # Some Elementary versions may not create index.html at the root of the target dir.
+            # To make static hosting stable, always ensure edr_reports/index.html exists.
+            "if [ ! -f edr_reports/index.html ]; then "
+            'INDEX="$(find edr_reports -maxdepth 5 -type f -name \\"index.html\\" | head -n 1)"; '
+            'if [ -n "$INDEX" ]; then cp "$INDEX" edr_reports/index.html; '
+            "else "
+            'HTML="$(find edr_reports -maxdepth 5 -type f -name \\"*.html\\" | head -n 1)"; '
+            'if [ -n "$HTML" ]; then cp "$HTML" edr_reports/index.html; fi; '
+            "fi; "
+            'fi"'
         ),
         env=dbt_env,
     )

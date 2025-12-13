@@ -1,6 +1,6 @@
 # DBT Project: Blockchain Data Warehouse
 
-Проект dbt для трансформации данных блокчейна в Data Warehouse.
+dbt для трансформации данных блокчейна в Data Warehouse.
 
 ## Структура проекта
 
@@ -57,16 +57,6 @@ dbt/
 - `eth_to_wei()`: Конвертация ETH в Wei
 - `generate_surrogate_key()`: Генерация суррогатных ключей
 
-## Запуск
-
-### Локально
-
-```bash
-cd dbt
-dbt deps          # Установка зависимостей
-dbt run           # Запуск моделей
-dbt test          # Запуск тестов
-```
 
 ### В Airflow
 

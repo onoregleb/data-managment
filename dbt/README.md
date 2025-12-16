@@ -1,6 +1,4 @@
-# DBT Project: Blockchain Data Warehouse
-
-dbt для трансформации данных блокчейна в Data Warehouse.
+# DBT
 
 ## Структура проекта
 

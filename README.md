@@ -18,87 +18,22 @@ ETL-пайплайн для сбора и анализа данных Ethereum �
 
 ---
 
-## Подключение к базам данных
+## URL / доступы
 
-### MongoDB
+Swagger URL: `http://213.171.31.111:8000/docs`
 
-**Формат строки подключения:**
-```
-mongodb://[username:password@]host[:port][/database][?options]
-```
+MongoDB URL: `mongodb://mongo:mongo@213.171.31.111:27017`
 
-**Переменные окружения (пример):**
-```bash
-MONGO_INITDB_ROOT_USERNAME=mongo
-MONGO_INITDB_ROOT_PASSWORD=mongo
-MONGO_HOST=localhost
-MONGO_PORT=27017
-MONGO_INITDB_DATABASE=blockchain_raw
-MONGO_URL=mongodb://mongo:mongo@localhost:27017/blockchain_raw
-```
+PostgreSQL URL: `postgresql://postgres:postgres@213.171.31.111:5433/blockchain`
 
-**Локально (Docker Compose):**
-```bash
-MONGO_URI=mongodb://mongo:mongo@mongodb:27017/
-MONGO_DB=blockchain_raw
-```
+Airflow:
+  URL: `http://213.171.31.111:8080`
+  User: `admin`
+  Password: `admin`
 
-**Production:**
-```bash
-MONGO_URI=mongodb://mongo:mongo@213.171.31.111:27017/
-MONGO_HOST=213.171.31.111
-MONGO_PORT=27017
-MONGO_INITDB_ROOT_USERNAME=mongo
-MONGO_INITDB_ROOT_PASSWORD=mongo
-MONGO_INITDB_DATABASE=blockchain_raw
-MONGO_URL=mongodb://mongo:mongo@213.171.31.111:27017/blockchain_raw
-```
+Elementary edr report URL: `http://213.171.31.111:8090/`
 
-### PostgreSQL
-
-**Формат строки подключения:**
-```
-postgresql://[username:password@]host[:port][/database][?options]
-```
-
-**Переменные окружения (пример):**
-```bash
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
-POSTGRES_DB=blockchain
-POSTGRES_URI=postgresql://postgres:postgres@localhost:5432/blockchain
-```
-
-**Примечание:** Для локального Docker Compose используется внутренний порт 5432, для внешнего доступа - 5433.
-
-**Локально (Docker Compose):**
-```bash
-POSTGRES_URI=postgresql://postgres:postgres@postgres-dw:5432/blockchain
-POSTGRES_HOST=postgres-dw
-POSTGRES_PORT=5432
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_DB=blockchain
-```
-
-**Production:**
-```bash
-POSTGRES_URI=postgresql://postgres:postgres@213.171.31.111:5433/blockchain
-POSTGRES_HOST=213.171.31.111
-POSTGRES_PORT=5433
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_DB=blockchain
-```
-
-**Подключение через DBeaver / pgAdmin:**
-- Host: `213.171.31.111`
-- Port: `5433`
-- Database: `blockchain`
-- Username: `postgres`
-- Password: `postgres`
+Презентация URL:
 
 ---
 

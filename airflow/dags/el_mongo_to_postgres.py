@@ -26,78 +26,47 @@ DBT_LOCK_FILE = os.getenv("DBT_LOCK_FILE", "/tmp/dbt_global.lock")
 
 
 def extract_wallets(**context):
-    """Извлечение кошельков из MongoDB"""
+    """Извлечение кошельков из MongoDB (только метрики, без передачи данных через XCom)."""
     from pymongo import MongoClient
 
     mongo_uri = os.getenv("MONGO_URI", "mongodb://mongo:mongo@mongodb:27017/")
     client = MongoClient(mongo_uri)
     db = client["blockchain_raw"]
 
-    wallets = list(db.wallets.find())
-    print(f"Extracted {len(wallets)} wallets from MongoDB")
-
-    for w in wallets:
-        w["_id"] = str(w["_id"])
-        if "added_at" in w:
-            w["added_at"] = w["added_at"].isoformat()
-        if "last_updated" in w:
-            w["last_updated"] = w["last_updated"].isoformat()
+    # Не читаем все документы в память (это может убить таск по OOM).
+    count = db.wallets.estimated_document_count()
+    print(f"Found {count} wallets in MongoDB")
 
     client.close()
-    context["ti"].xcom_push(key="wallets", value=wallets)
-    return len(wallets)
+    return int(count)
 
 
 def extract_transactions(**context):
-    """Извлечение транзакций из MongoDB"""
-    from decimal import Decimal
-
-    from bson.decimal128 import Decimal128
+    """Извлечение транзакций из MongoDB (только метрики, без передачи данных через XCom)."""
     from pymongo import MongoClient
 
     mongo_uri = os.getenv("MONGO_URI", "mongodb://mongo:mongo@mongodb:27017/")
     client = MongoClient(mongo_uri)
     db = client["blockchain_raw"]
 
-    transactions = list(db.transactions.find())
-    print(f"Extracted {len(transactions)} transactions from MongoDB")
-
-    def sanitize(val):
-        if isinstance(val, Decimal128):
-            return float(val.to_decimal())
-        if isinstance(val, Decimal):
-            return float(val)
-        return val
-
-    for tx in transactions:
-        tx["_id"] = str(tx["_id"])
-        # Приводим все Decimal/Decimal128 к json-friendly float
-        tx["value_wei"] = sanitize(tx.get("value_wei"))
-        tx["value_eth"] = sanitize(tx.get("value_eth"))
-        tx["gas_price"] = sanitize(tx.get("gas_price"))
-        if "timestamp" in tx:
-            tx["timestamp"] = tx["timestamp"].isoformat()
-        if "fetched_at" in tx:
-            tx["fetched_at"] = tx["fetched_at"].isoformat()
+    # Не читаем все документы в память (это может убить таск по OOM).
+    count = db.transactions.estimated_document_count()
+    print(f"Found {count} transactions in MongoDB")
 
     client.close()
-    context["ti"].xcom_push(key="transactions", value=transactions)
-    return len(transactions)
+    return int(count)
 
 
 def load_wallets(**context):
     """Загрузка кошельков в PostgreSQL"""
     import psycopg2
     from psycopg2.extras import execute_values
+    from pymongo import MongoClient
 
     postgres_uri = os.getenv(
         "POSTGRES_URI", "postgresql://postgres:postgres@postgres-dw:5432/blockchain"
     )
-    wallets = context["ti"].xcom_pull(key="wallets", task_ids="extract_wallets")
-
-    if not wallets:
-        print("No wallets to load")
-        return 0
+    mongo_uri = os.getenv("MONGO_URI", "mongodb://mongo:mongo@mongodb:27017/")
 
     conn = psycopg2.connect(postgres_uri)
     cur = conn.cursor()
@@ -116,10 +85,34 @@ def load_wallets(**context):
     """
     )
 
-    values = [
-        (w["address"], w.get("transaction_count", 0), w.get("added_at"), w.get("last_updated"))
-        for w in wallets
-    ]
+    client = MongoClient(mongo_uri)
+    db = client["blockchain_raw"]
+
+    values = []
+    for w in db.wallets.find(
+        {},
+        projection={
+            "_id": 0,
+            "address": 1,
+            "transaction_count": 1,
+            "added_at": 1,
+            "last_updated": 1,
+        },
+    ).batch_size(2000):
+        addr = w.get("address")
+        if not addr:
+            continue
+        values.append(
+            (addr, w.get("transaction_count", 0), w.get("added_at"), w.get("last_updated"))
+        )
+
+    client.close()
+
+    if not values:
+        print("No wallets to load")
+        cur.close()
+        conn.close()
+        return 0
 
     execute_values(
         cur,
@@ -138,23 +131,23 @@ def load_wallets(**context):
     cur.close()
     conn.close()
 
-    print(f"Loaded {len(wallets)} wallets to PostgreSQL")
-    return len(wallets)
+    print(f"Loaded {len(values)} wallets to PostgreSQL")
+    return len(values)
 
 
 def load_transactions(**context):
     """Загрузка транзакций в PostgreSQL"""
+    from decimal import Decimal
+
     import psycopg2
+    from bson.decimal128 import Decimal128
     from psycopg2.extras import execute_values
+    from pymongo import MongoClient
 
     postgres_uri = os.getenv(
         "POSTGRES_URI", "postgresql://postgres:postgres@postgres-dw:5432/blockchain"
     )
-    transactions = context["ti"].xcom_pull(key="transactions", task_ids="extract_transactions")
-
-    if not transactions:
-        print("No transactions to load")
-        return 0
+    mongo_uri = os.getenv("MONGO_URI", "mongodb://mongo:mongo@mongodb:27017/")
 
     conn = psycopg2.connect(postgres_uri)
     cur = conn.cursor()
@@ -179,40 +172,86 @@ def load_transactions(**context):
     """
     )
 
+    def sanitize(val):
+        if isinstance(val, Decimal128):
+            return float(val.to_decimal())
+        if isinstance(val, Decimal):
+            return float(val)
+        return val
+
+    insert_sql = """
+        INSERT INTO transactions (
+            hash, wallet_address, from_address, to_address, value_eth,
+            gas_used, gas_price, block_number, is_error, timestamp
+        )
+        VALUES %s
+        ON CONFLICT (hash) DO UPDATE SET
+            loaded_at = CURRENT_TIMESTAMP
+    """
+
+    batch_size = int(os.getenv("TX_BATCH_SIZE", "5000"))
+    total = 0
+
+    client = MongoClient(mongo_uri)
+    db = client["blockchain_raw"]
+
+    cursor = db.transactions.find(
+        {},
+        projection={
+            "_id": 0,
+            "hash": 1,
+            "wallet_address": 1,
+            "from_address": 1,
+            "to_address": 1,
+            "value_eth": 1,
+            "gas_used": 1,
+            "gas_price": 1,
+            "block_number": 1,
+            "is_error": 1,
+            "timestamp": 1,
+        },
+    ).batch_size(batch_size)
+
     values = []
-    for tx in transactions:
+    for tx in cursor:
+        tx_hash = tx.get("hash")
+        if not tx_hash:
+            continue
         values.append(
             (
-                tx.get("hash"),
+                tx_hash,
                 tx.get("wallet_address"),
                 tx.get("from_address"),
                 tx.get("to_address"),
-                tx.get("value_eth"),
+                sanitize(tx.get("value_eth")),
                 tx.get("gas_used"),
-                tx.get("gas_price"),
+                sanitize(tx.get("gas_price")),
                 tx.get("block_number"),
                 tx.get("is_error", False),
                 tx.get("timestamp"),
             )
         )
 
-    execute_values(
-        cur,
-        """
-        INSERT INTO transactions (hash, wallet_address, from_address, to_address, value_eth, gas_used, gas_price, block_number, is_error, timestamp)
-        VALUES %s
-        ON CONFLICT (hash) DO UPDATE SET
-            loaded_at = CURRENT_TIMESTAMP
-        """,
-        values,
-    )
+        if len(values) >= batch_size:
+            execute_values(cur, insert_sql, values, page_size=batch_size)
+            conn.commit()
+            total += len(values)
+            values.clear()
+            print(f"Loaded {total} transactions so far...")
+
+    if values:
+        execute_values(cur, insert_sql, values, page_size=min(batch_size, len(values)))
+        conn.commit()
+        total += len(values)
+
+    client.close()
 
     conn.commit()
     cur.close()
     conn.close()
 
-    print(f"Loaded {len(transactions)} transactions to PostgreSQL")
-    return len(transactions)
+    print(f"Loaded {total} transactions to PostgreSQL")
+    return total
 
 
 def log_stats(**context):

@@ -33,7 +33,7 @@ Airflow:
 
 Elementary edr report URL: `http://213.171.31.111:8090/`
 
-Презентация URL:
+Презентация URL: https://docs.google.com/presentation/d/1MqS9JikaZEONLh7JC804hDW-W8ytTqXL/edit?usp=sharing&ouid=107408971600161543478&rtpof=true&sd=true
 
 ---
 

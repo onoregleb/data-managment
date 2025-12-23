@@ -4,10 +4,6 @@ config-version: 2
 
 profile: 'blockchain_dwh'
 
-# Required for Elementary on dbt>=1.8 (temporary workaround recommended by Elementary).
-flags:
-  require_explicit_package_overrides_for_builtin_materializations: false
-
 model-paths: ["models"]
 analysis-paths: ["analyses"]
 test-paths: ["tests"]
@@ -42,4 +38,3 @@ models:
 
 vars:
   project_start_date: '2024-01-01'
-  mute_ensure_materialization_override: true

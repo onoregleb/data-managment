@@ -4,8 +4,7 @@ models:
   - name: stg_wallets
     description: "Staging model for wallet data"
     data_tests:
-      - elementary.volume_anomalies:
-          severity: warn
+      - elementary.volume_anomalies
     columns:
       - name: wallet_id
         description: "Primary key"
@@ -20,12 +19,19 @@ models:
 
   - name: stg_transactions
     description: "Staging model for transaction data"
+    config:
+      elementary:
+        timestamp_column: transaction_timestamp
     data_tests:
       - elementary.freshness_anomalies:
           timestamp_column: transaction_timestamp
       - elementary.event_freshness_anomalies:
           event_timestamp_column: transaction_timestamp
           severity: warn
+      - elementary.all_columns_anomalies:
+          tags: ["all_columns_anomalies"]
+          config:
+            severity: warn
     columns:
       - name: transaction_id
         description: "Primary key"
@@ -37,6 +43,15 @@ models:
         data_tests:
           - unique
           - not_null
+      - name: value_eth
+        description: "Transaction value in ETH"
+        data_tests:
+          - elementary.column_anomalies:
+              column_anomalies:
+                - average
+                - null_count
+              config:
+                severity: warn
       - name: is_error
         description: "Transaction error status"
         data_tests:
@@ -74,7 +89,6 @@ models:
       - elementary.dimension_anomalies:
           dimensions:
             - is_active
-          severity: warn
     columns:
       - name: wallet_id
         description: "Wallet unique identifier"
@@ -109,6 +123,19 @@ models:
         description: "Date of summary"
         data_tests:
           - unique
+          - not_null
+
+  - name: transactions_append
+    description: "Incremental (append) table with new transactions (by increasing transaction_id)"
+    columns:
+      - name: transaction_id
+        description: "Primary key from raw"
+        data_tests:
+          - unique
+          - not_null
+      - name: transaction_hash
+        description: "Transaction hash"
+        data_tests:
           - not_null
 
   # ODS layer
